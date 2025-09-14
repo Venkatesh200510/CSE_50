@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Department Login</title>
+    <link href="./output.css" rel="stylesheet">
+</head>
+
+<body class="bg-gradient-to-r from-indigo-500 to-blue-500 min-h-screen flex items-center justify-center">
+
+    <div class="bg-white rounded-2xl shadow-lg w-100 max-w-md p-6">
+        <h1 class="text-2xl font-bold text-center mb-4">Department Login</h1>
+
+        <!-- Toggle Buttons -->
+        <div class="flex justify-center mb-6">
+            <button id="studentTab" class="w-1/2 py-2 text-white bg-blue-600 rounded-l-lg">Student</button>
+            <button id="facultyTab" class="w-1/2 py-2 bg-gray-200 rounded-r-lg">Faculty</button>
+        </div>
+
+        <!-- Student Login -->
+        <form action="/api/student-login" method="POST" id="studentLogin">
+            <input name="usn" type="text" placeholder="Enter USN" class="w-full p-3 border rounded-lg mb-3" required>
+            <input name="password" type="password" placeholder="Enter Password"
+                class="w-full p-3 border rounded-lg mb-3" required>
+            <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700">Login</button>
+        </form>
+
+        <!-- Faculty Login -->
+        <form action="/api/faculty-login" method="POST" id="facultyLogin" class="hidden">
+            <input name="ssn_id" type="text" placeholder="Enter SSN" class="w-full p-3 border rounded-lg mb-3" required>
+            <input name="password" type="password" placeholder="Enter Password"
+                class="w-full p-3 border rounded-lg mb-3" required>
+            <button type="submit"
+                class="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700">Login</button>
+        </form>
+
+        <!-- Forgot Password -->
+        <p class="text-sm text-center mt-4">
+            <a href="forgot.html" class="text-blue-600 hover:underline">Forgot Password?</a>
+        </p>
+    </div>
+    <script>
+        // Tab Switching 
+        document.getElementById("studentTab").addEventListener("click", () => {
+            document.getElementById("studentLogin").classList.remove("hidden");
+            document.getElementById("facultyLogin").classList.add("hidden");
+            document.getElementById("studentTab").classList.add("bg-blue-600", "text-white");
+            document.getElementById("facultyTab").classList.remove("bg-green-600", "text-white");
+            document.getElementById("facultyTab").classList.add("bg-gray-200");
+        });
+
+        document.getElementById("facultyTab").addEventListener("click", () => {
+            document.getElementById("facultyLogin").classList.remove("hidden");
+            document.getElementById("studentLogin").classList.add("hidden");
+            document.getElementById("facultyTab").classList.add("bg-green-600", "text-white");
+            document.getElementById("studentTab").classList.remove("bg-blue-600", "text-white");
+            document.getElementById("studentTab").classList.add("bg-gray-200");
+        });
+        // Faculty Login (connects to Express backend)
+        async function facultyLogin() {
+            const ssnInput = document.getElementById("ssn");
+            const passwordInput = document.getElementById("password");
+
+            if (!ssnInput || !passwordInput) {
+                console.error("❌ Input element not found!");
+                return;
+            }
+
+            const ssn = ssnInput.value.trim();
+            const password = passwordInput.value.trim();
+
+            if (!ssn || !password) {
+                alert("Please enter both SSN and password");
+                return;
+            }
+
+            try {
+                const res = await fetch("/faculty-login", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ ssn, password })
+                });
+
+                if (res.ok) {
+                    window.location.href = "/home";
+                } else {
+                    const data = await res.json();
+                    alert(data.message);
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+    </script>
+</body>
+
+</html>
