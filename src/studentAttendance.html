@@ -232,11 +232,19 @@
             loadAttendance(usn);
         }
 
-        function goHome() {
-            window.location.href = "studentHome.html";
+        async function goHome() {
+            try {
+                // Check session again (fresh check)
+                const res = await fetch("/api/attendance/me", { credentials: "include" });
+                if (res.ok) {
+                    window.location.href = "studentHome.html";
+                } else {
+                    window.location.href = "Home.html";
+                }
+            } catch {
+                window.location.href = "Home.html";
+            }
         }
-
-        // Init
         async function initPage() {
             try {
                 // Try session-based first

@@ -227,8 +227,18 @@
 
         });
 
-        function goHome() {
-            window.location.href = "home.html";
+        async function goHome() {
+            try {
+                // Check if student session exists
+                const res = await fetch("/api/marks/me", { credentials: "include" });
+                if (res.ok) {
+                    window.location.href = "studentHome.html";
+                } else {
+                    window.location.href = "Home.html";
+                }
+            } catch {
+                window.location.href = "Home.html";
+            }
         }
     </script>
 
