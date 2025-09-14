@@ -44,6 +44,15 @@
                 </button>
             </a>
         </div>
+        <!-- 📢 Recent Announcements Modal -->
+        <div id="recent-announcements"
+            class="fixed bottom-6 right-6 bg-white shadow-xl rounded-xl w-80 p-4 cursor-pointer border border-gray-200">
+            <h3 class="text-lg font-bold text-gray-800 mb-2">📢 Recent Announcements</h3>
+            <ul id="recent-announcements-list" class="space-y-2 text-sm text-gray-700"></ul>
+            <p class="text-blue-600 text-xs mt-3 text-right">Click to view all →</p>
+        </div>
+
+
     </section>
     <section id="contact" class="min-h-screen bg-pink-100 flex flex-col items-center justify-center px-6">
         <h2 class="text-3xl md:text-5xl font-bold leading-loose">Contact Us</h2>
@@ -109,106 +118,47 @@
                 button.disabled = false;
             }
         }
-        async function loadAnnouncements() {
+        async function loadRecentAnnouncements() {
             try {
                 const res = await fetch("/api/announcements");
                 const announcements = await res.json();
 
-                const container = document.getElementById("announcements-container");
-                container.innerHTML = "";
+                const list = document.getElementById("recent-announcements-list");
+                list.innerHTML = "";
 
-                if (!announcements || announcements.length === 0) {
-                    container.innerHTML = `
-            <div class="bg-white/90 backdrop-blur-lg p-8 rounded-2xl shadow-xl text-center">
-              <p class="text-gray-500 text-lg">No announcements available.</p>
-            </div>`;
+                const recent = announcements.slice(0, 5); // only 5 announcements
+
+                if (recent.length === 0) {
+                    list.innerHTML = `<li class="text-gray-500">No announcements yet.</li>`;
                     return;
                 }
 
-                announcements.forEach(a => {
-                    const fileSection = (() => {
-                        if (!a.file_url) return "";
-                        if (a.file_type && a.file_type.startsWith("image/")) {
-                            return `
-                <div class="mt-4">
-                  <img src="${a.file_url}" alt="attachment"
-                       class="rounded-xl shadow-lg max-h-72 mx-auto border border-gray-200"/>
-                </div>`;
-                        } else if (a.file_type === "application/pdf") {
-                            return `
-    <div class="mt-4">
-      <object data="${a.file_url}" type="application/pdf"
-              class="w-full h-72 rounded-lg border shadow"></object>
-      <div class="flex justify-center space-x-6 mt-3">
-        <a href="${a.file_url}" target="_blank"
-           class="px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 shadow-md transition">
-          📄 View PDF
-        </a>
-        <a href="${a.file_url}" download
-           class="px-4 py-2 rounded-lg bg-green-600 text-white font-semibold hover:bg-green-700 shadow-md transition">
-          ⬇ Download PDF
-        </a>
-      </div>
-    </div>`;
-                        }
-                        else {
-                            return `
-                <div class="mt-4">
-                  <a href="${a.file_url}" download
-                     class="inline-block px-4 py-2 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-700 shadow-md transition">
-                    📎 Download Attachment
-                  </a>
-                </div>`;
-                        }
-                    })();
-
-                    const card = document.createElement("div");
-                    card.className =
-                        "bg-white/90 backdrop-blur-md p-6 rounded-3xl shadow-xl hover:shadow-2xl transition transform hover:-translate-y-1";
-                    card.innerHTML = `
-            <h2 class="text-2xl font-bold text-gray-800 mb-2">${a.title}</h2>
-            <p class="text-sm text-gray-500 mb-3">By ${a.faculty_name || "Faculty"} • ${new Date(a.created_at).toLocaleString()}</p>
-            <p class="text-gray-700 leading-relaxed whitespace-pre-line">${a.message || ""}</p>
-            ${fileSection}
-          `;
-                    container.appendChild(card);
+                recent.forEach(a => {
+                    const li = document.createElement("li");
+                    li.className = "truncate";
+                    li.innerHTML = `<span class="font-semibold">${a.title}</span> - 
+                      <span class="text-gray-600">${a.message?.slice(0, 40) || ""}...</span>`;
+                    list.appendChild(li);
                 });
+
+                // Clicking modal → go to announcements page
+                const modal = document.getElementById("recent-announcements");
+                modal.addEventListener("click", () => {
+                    window.location.href = "announcements.html";
+                });
+
             } catch (err) {
-                console.error("Error loading announcements:", err);
-                alert("Failed to load announcements.");
+                console.error("Error fetching recent announcements:", err);
             }
         }
-
-        async function checkUnreadNotices() {
-            try {
-                const res = await fetch("/api/notices/unread-count", { credentials: "include" });
-                if (!res.ok) return;
-
-                const data = await res.json();
-
-                const desktopDot = document.getElementById("dot-notices");
-                const mobileDot = document.getElementById("dot-notices-mobile");
-
-                if (data.count && data.count > 0) {
-                    desktopDot?.classList.remove("hidden");
-                    mobileDot?.classList.remove("hidden");
-                } else {
-                    desktopDot?.classList.add("hidden");
-                    mobileDot?.classList.add("hidden");
-                }
-            } catch (err) {
-                console.error("Error fetching unread notices:", err);
-            }
-        }
-
-        document.addEventListener("DOMContentLoaded", checkUnreadNotices);
-
-
         function goHome() {
             window.location.href = "home.html";
         }
 
-        document.addEventListener("DOMContentLoaded", loadAnnouncements);
+        document.addEventListener("DOMContentLoaded", () => {
+            loadRecentAnnouncements();
+        });
+
 
 
     </script>

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>All Announcements</title>
+  <link href="./output.css" rel="stylesheet">
+</head>
+
+<body class="bg-gray-500">
+  <div class="max-w-5xl mx-auto py-10 px-4">
+    <h1 class="text-4xl font-bold mb-8 text-center">📢 All Announcements</h1>
+    <div id="announcements-container" class="grid gap-6 md:grid-cols-2 lg:grid-cols-3"></div>
+  </div>
+
+  <script>
+    async function loadAnnouncements() {
+      try {
+        const res = await fetch("/api/announcements");
+        const announcements = await res.json();
+
+        const container = document.getElementById("announcements-container");
+        container.innerHTML = "";
+
+        if (!announcements || announcements.length === 0) {
+          container.innerHTML = `<p class="text-gray-500">No announcements available.</p>`;
+          return;
+        }
+
+        announcements.forEach(a => {
+          let fileSection = "";
+          if (a.file_url) {
+            if (a.file_type && a.file_type.startsWith("image/")) {
+              fileSection = `<img src="${a.file_url}" class="rounded-lg shadow-md mt-3 max-h-60 mx-auto"/>`;
+            } else if (a.file_type === "application/pdf") {
+              fileSection = `
+                <object data="${a.file_url}" type="application/pdf"
+                        class="w-full h-64 mt-3 border rounded"></object>
+                <a href="${a.file_url}" download
+                   class="block mt-3 px-4 py-2 bg-green-600 text-white rounded-lg text-center">
+                   ⬇ Download PDF
+                </a>`;
+            } else {
+              fileSection = `<a href="${a.file_url}" download
+                               class="block mt-3 px-4 py-2 bg-indigo-600 text-white rounded-lg text-center">
+                               📎 Download File
+                             </a>`;
+            }
+          }
+
+          const card = document.createElement("div");
+          card.className = "bg-white p-6 rounded-xl shadow hover:shadow-lg transition";
+          card.innerHTML = `
+            <h2 class="text-xl font-bold text-gray-800">${a.title}</h2>
+            <p class="text-sm text-gray-500">By ${a.faculty_name || "Faculty"} • 
+               ${new Date(a.created_at).toLocaleString()}</p>
+            <p class="text-gray-700 mt-2 whitespace-pre-line">${a.message || ""}</p>
+            ${fileSection}
+          `;
+          container.appendChild(card);
+        });
+      } catch (err) {
+        console.error("Error loading announcements:", err);
+        alert("Failed to load announcements.");
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", loadAnnouncements);
+  </script>
+</body>
+
+</html>
