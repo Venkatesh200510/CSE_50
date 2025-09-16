@@ -1,6 +1,7 @@
 const express = require("express");
 const path = require("path");
 const session = require("express-session");
+const MySQLStore = require("express-mysql-session")(session);
 const bcrypt = require("bcrypt");
 const fs = require("fs");
 const multer = require("multer");
@@ -34,15 +35,32 @@ app.use(bodyParser.json());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static("src"));
+
+// Reuse your db config from db.js
+const sessionStore = new MySQLStore(
+  {
+    host: process.env.DB_HOST,
+    port: process.env.DB_PORT || 3306,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+    clearExpired: true,
+    checkExpirationInterval: 900000, // 15 mins
+    expiration: 1000 * 60 * 60 * 24, // 1 day
+  }
+);
+
 app.use(
   session({
-    secret: "supersecret",   // move to env
+    key: "user_sid",                 // cookie name
+    secret: process.env.SESSION_SECRET || "supersecret",
+    store: sessionStore,             // ✅ use MySQL instead of MemoryStore
     resave: false,
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      secure: false,         // set true only on HTTPS
-      maxAge: 1000 * 60 * 60 // 1 hr
+      secure: false,                 // set to true if HTTPS
+      maxAge: 1000 * 60 * 60,        // 1 hr
     },
   })
 );
