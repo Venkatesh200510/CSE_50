@@ -1,21 +1,17 @@
 const mysql = require("mysql2/promise");
 require("dotenv").config(); // Load environment variables from .env
 
-// Create a connection pool (better than single connection for scalability)
+// Create a connection pool
 const db = mysql.createPool({
-  host: process.env.DB_HOST,       // e.g. containers-us-west-123.railway.app
-  user: process.env.DB_USERNAME,       // your database username
-  password: process.env.DB_PASSWORD, // your database password
-  database: process.env.DATABASE,   // database name
-  port: process.env.DB_PORT || 3306, // default MySQL port
+  host: process.env.DB_HOST,     
+  user: process.env.DB_USER,     
+  password: process.env.DB_PASSWORD, 
+  database: process.env.DB_NAME,   
+  port: process.env.DB_PORT || 3306, 
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0
 });
-
-// Export pool for use in other files
-module.exports =  db;
-
 
 // ✅ Test connection
 (async () => {
@@ -27,6 +23,5 @@ module.exports =  db;
     console.error("❌ Database connection failed:", err);
   }
 })();
-
 
 module.exports = db;
