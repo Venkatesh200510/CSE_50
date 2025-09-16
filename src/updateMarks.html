@@ -193,7 +193,7 @@
                 };
 
                 try {
-                    const response = await fetch('http://localhost:3000/api/marks', {
+                    const response = await fetch('/api/marks', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(data)

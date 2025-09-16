@@ -27,7 +27,7 @@ const PORT = process.env.PORT || 3000;
 
 app.use(
   cors({
-    origin: "http://localhost:3000",
+    origin: ["http://localhost:3000","https://cse50-production-f95c.up.railway.app/"],
     credentials: true,
   })
 );
@@ -57,11 +57,7 @@ app.use(
     store: sessionStore,             // ✅ use MySQL instead of MemoryStore
     resave: false,
     saveUninitialized: false,
-    cookie: {
-      httpOnly: true,
-      secure: false,                 // set to true if HTTPS
-      maxAge: 1000 * 60 * 60,        // 1 hr
-    },
+   cookie: { httpOnly: true, secure: true, sameSite: "none", maxAge: 86400000 }
   })
 );
 

@@ -106,7 +106,7 @@
             if (!semester) return;
 
             try {
-                const res = await fetch(`http://localhost:3000/api/attendance/semester-subjects?semester=${semester}`);
+                const res = await fetch(`/api/attendance/semester-subjects?semester=${semester}`);
                 const data = await res.json();
                 subjSelect.innerHTML = '<option value="">Select Subject</option>';
                 data.forEach(sub => {
