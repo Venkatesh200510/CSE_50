@@ -86,7 +86,7 @@
 
                 if (department && semester) {
                     try {
-                        const res = await fetch(`http://localhost:3000/api/subjects/${department}/${semester}`);
+                        const res = await fetch(`/api/subjects/${department}/${semester}`);
                         const subjects = await res.json();
 
                         if (subjects.length > 0) {
