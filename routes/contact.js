@@ -15,24 +15,21 @@ const transporter = nodemailer.createTransport({
 // POST /contact
 router.post("/", async (req, res) => {
   const { email, message } = req.body;
-
-  if (!email || !message) {
+  if (!email || !message)
     return res.status(400).json({ error: "Email and message are required" });
-  }
-
-  const mailOptions = {
-    from: '"CSE Department Website" <dams.project25@gmail.com>',
-    replyTo: email,
-    to: "dams.project25@gmail.com",
-    subject: `📩 New Contact Us Message from ${email}`,
-    text: `Email: ${email}\n\nMessage:\n${message}`,
-  };
 
   try {
-    await transporter.sendMail(mailOptions);
-    res.json({ success: true, message: "Message sent successfully!" });
-  } catch (err) {
-    console.error("Error sending email:", err);
+    const response = await resend.emails.send({
+      from: "dams.project25@gmail.com",   // ✅ must be verified in Resend
+      to: "dams.project25@gmail.com",
+      reply_to: email,
+      subject: `📩 New Contact Us Message from ${email}`,
+      text: `Email: ${email}\n\nMessage:\n${message}`,
+    });
+
+    res.json({ success: true, message: "Message sent successfully!", response });
+  } catch (error) {
+    console.error("Error sending contact email:", error);
     res.status(500).json({ error: "Failed to send message" });
   }
 });

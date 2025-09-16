@@ -8,7 +8,7 @@ const multer = require("multer");
 const cors = require("cors");
 const db = require("./db");
 const bodyParser = require("body-parser");
-const nodemailer = require("nodemailer");
+const { Resend } = require("resend"); 
 
 const marksRoutes = require("./routes/marks");
 const contactRoutes = require("./routes/contact");

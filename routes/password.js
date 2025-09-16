@@ -1,14 +1,16 @@
 const express = require("express");
 const bcrypt = require("bcrypt");
 const db = require("../db"); // adjust if db connection is elsewhere
-const { transporter } = require("../mailer"); // if transporter is exported separately
-const { isAuth } = require("../middleware/auth"); // your auth middleware
+const { isAuth } = require("../middleware/auth");
+const { Resend } = require("resend");
 
 const router = express.Router();
+const resend = new Resend(process.env.RESEND_API_KEY);
+
 // In-memory OTP store
 let otpStore = {};
 
-// Change Password
+// ================== CHANGE PASSWORD ==================
 router.post("/change-password", isAuth, async (req, res) => {
   try {
     const { oldPassword, newPassword } = req.body;
@@ -36,7 +38,7 @@ router.post("/change-password", isAuth, async (req, res) => {
   }
 });
 
-// Forgot Password (OTP)
+// ================== FORGOT PASSWORD (OTP) ==================
 router.post("/forgot-password", async (req, res) => {
   const { email } = req.body;
   try {
@@ -50,8 +52,8 @@ router.post("/forgot-password", async (req, res) => {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     otpStore[email] = { otp, expires: Date.now() + 300000 };
 
-    await transporter.sendMail({
-      from: "dams.project25@gmail.com",
+    await resend.emails.send({
+      from: "dams.project25@gmail.com", // ✅ must be verified in Resend dashboard
       to: email,
       subject: "Password Reset OTP",
       text: `Your OTP is: ${otp} (valid for 5 minutes)`,
@@ -59,12 +61,12 @@ router.post("/forgot-password", async (req, res) => {
 
     res.json({ message: "OTP sent to email" });
   } catch (err) {
-    console.error(err);
+    console.error("Error sending OTP:", err);
     res.status(500).json({ message: "Server error" });
   }
 });
 
-// Reset Password
+// ================== RESET PASSWORD ==================
 router.post("/reset-password", async (req, res) => {
   const { email, otp, newPassword } = req.body;
   try {
