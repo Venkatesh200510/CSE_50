@@ -52,17 +52,13 @@ const sessionStore = new MySQLStore(
 
 app.use(
   session({
-    key: "user_sid",
+    key: "user_sid",                 // cookie name
     secret: process.env.SESSION_SECRET || "supersecret",
-    store: sessionStore,
+    store: sessionStore,             // ✅ use MySQL instead of MemoryStore
     resave: false,
     saveUninitialized: false,
-    cookie: {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production", // ✅ only secure in production
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // ✅ allow cross-site cookies
-      maxAge: 1000 * 60 * 60 * 24, // 1 day
-    },
+   cookie: { httpOnly: true, secure: process.env.NODE_ENV === "production", // only secure in prod
+  sameSite: "lax", maxAge: 86400000 }
   })
 );
 
@@ -131,7 +127,7 @@ app.get("/api/profile", isAuth, async (req, res) => {
 
 app.post("/logout", (req, res) => {
   req.session.destroy(() => {
-    res.clearCookie("connect.user");
+    res.clearCookie("connect.sid");
     res.redirect("/");
   });
 });
@@ -145,4 +141,4 @@ app.use((err, req, res, next) => {
 // Start Server
 app.listen(PORT, () =>
   console.log(`🚀 Server running on http://localhost:${PORT}`)
-);  
+);
