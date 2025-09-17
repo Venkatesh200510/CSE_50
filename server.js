@@ -66,7 +66,6 @@ app.use(
   })
 );
 
-
 app.use("/api/marks", marksRoutes);
 app.use("/contact", contactRoutes);
 app.use("/api", passwordRoutes);
@@ -91,7 +90,6 @@ app.get("/api/session", (req, res) => {
   if (!req.session || !req.session.user) return res.json({ loggedIn: false });
   res.json({ loggedIn: true, user: req.session.user });
 });
-
 
 function isAuth(req, res, next) {
   if (req.session && req.session.user) return next();
@@ -133,7 +131,7 @@ app.get("/api/profile", isAuth, async (req, res) => {
 
 app.post("/logout", (req, res) => {
   req.session.destroy(() => {
-    res.clearCookie("user_sid");
+    res.clearCookie("connect.user");
     res.redirect("/");
   });
 });
@@ -147,4 +145,4 @@ app.use((err, req, res, next) => {
 // Start Server
 app.listen(PORT, () =>
   console.log(`🚀 Server running on http://localhost:${PORT}`)
-);
+);  
