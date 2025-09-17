@@ -1,17 +1,28 @@
 const express = require("express");
 const db = require("../db");
-const nodemailer = require("nodemailer");
+const { Resend } = require("resend"); 
 
 const router = express.Router();
 
 // ✅ Setup mail transporter
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: "dams.project25@gmail.com",
-    pass: "totl oecx oktp kqtv", // app password
+const transporter = {
+  async sendMail({ to, subject, text, html }) {
+    try {
+      const response = await resend.emails.send({
+        from: "dams.project25@gmail.com", // must be verified in Resend
+        to,
+        subject,
+        text,
+        html,
+      });
+      console.log("Email sent:", response);
+      return response;
+    } catch (error) {
+      console.error("Error sending email:", error);
+      throw error;
+    }
   },
-});
+};
 
 router.post("/", async (req, res) => {
   const { department, usn, semester, subjects } = req.body;
@@ -87,7 +98,7 @@ if (rows.length > 0) {
     to: studentEmail, // 🎯 only that student
     subject: `📊 Marks Uploaded`,
     text: `Dear Student,\n\nYour marks have been uploaded successfully. 
-Please log in to the student portal to view your detailed results.\n\nRegards,\nCSE Department`,
+Please log in to the student portal to view your detailed results.\n click here https://cse50-production-f95c.up.railway.app/\n\nRegards,\nCSE Department`,
   });
 }
 

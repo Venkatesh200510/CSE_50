@@ -4,56 +4,107 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CSE Department</title>
+    <title>Student Home</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css">
     <link href="./output.css" rel="stylesheet">
 </head>
 
-<body class="scroll-smooth bg-gray-50">
-    <header class="fixed top-0 left-0 w-full bg-gray-800 text-white shadow-md z-50">
+<body class="bg-blue-400 min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-gray-800 text-white p-7 text-center shadow-md">
+        <h1 class="text-3xl font-bold">Department Academic Management System</h1>
     </header>
-    <section id="home"
-        class="min-h-screen flex flex-col items-center justify-center text-center px-6 pt-28 bg-gradient-to-r from-cyan-500 to-red-500">
-        <h1 class="text-3xl md:text-5xl lg:text-6xl font-bold leading-tight text-white">
-            Department Academic <br> Management System
-        </h1>
-        <p class="text-lg md:text-2xl lg:text-3xl mt-6 text-white">
-            Your one-stop portal for academics, attendance and resources.
-        </p>
 
-        <div class="flex flex-wrap justify-center gap-4 mt-12">
-            <a href="timetableView.html">
-                <button class="bg-blue-700 text-white px-6 py-3 rounded-xl hover:bg-blue-500 flex items-center gap-2">
-                    <i class="fa-solid fa-calendar"></i> Time Table
-                </button>
-            </a>
-            <a href="studentMarks.html">
-                <button class="bg-blue-700 text-white px-6 py-3 rounded-xl hover:bg-blue-500 flex items-center gap-2">
-                    <i class="fa-solid fa-chart-simple"></i> Marks/Result
-                </button>
-            </a>
+    <!-- Profile Modal (Full Details) -->
+    <div id="student-profile-card" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg w-96 p-6 relative shadow-lg">
+            <!-- Close Button -->
+            <button id="closeStudentProfile"
+                class="absolute top-3 right-3 text-white w-6 h-6 rounded-full pb-1 bg-red-600 flex items-center justify-center">
+                x
+            </button>
 
+            <!-- Profile Info -->
+            <div class="text-center space-y-2">
+                <div id="student-avatar"
+                    class="w-14 h-14 mx-auto rounded-full bg-gray-800 flex items-center justify-center text-white text-xl font-bold">
+                    ?
+                </div>
+                <h2 class="text-2xl font-bold text-gray-600" id="student-name">Loading...</h2>
+                <p id="student-usn" class="text-gray-600"></p>
+                <p id="student-section" class="text-gray-600"></p>
+                <p id="student-sem" class="text-gray-600"></p>
+                <p id="student-phone" class="text-gray-600"></p>
+                <p id="student-email" class="text-gray-600"></p>
 
-            <a href="studentAttendance.html"> <button
-                    class="bg-blue-700 text-white px-6 py-3 rounded-xl hover:bg-blue-500 flex items-center gap-2">
-                    <i class="fa-solid fa-calendar-week"></i> Attendance
-                </button></a>
-            <a href="viewNotes.html">
-                <button class="bg-blue-700 text-white px-6 py-3 rounded-xl hover:bg-blue-500 flex items-center gap-2">
-                    <i class="fa-solid fa-book"></i> Notes & Resources
-                </button>
-            </a>
+                <!-- Buttons -->
+                <div class="mt-5 space-y-3">
+                    <button id="studentChangePass"
+                        class="bg-blue-500 text-white px-4 py-2 rounded w-40 hover:bg-blue-600">
+                        Change Password
+                    </button>
+                    <form action="/logout" method="POST">
+                        <button type="submit" class="bg-red-500 text-white px-4 py-2 rounded w-40 hover:bg-red-600">
+                            Logout
+                        </button>
+                    </form>
+                </div>
+            </div>
         </div>
-        <!-- 📢 Recent Announcements Modal -->
+    </div>
+
+    <!-- Profile Card (Quick Info) -->
+    <div class="flex justify-between items-center p-4 bg-white shadow-md">
+        <div id="openProfile"
+            class="lg:m-20 lg:w-80 lg:p-6 bg-white shadow-xl rounded-xl cursor-pointer border border-gray-200">
+            <h3 class="text-xl font-bold text-gray-800 mb-4 text-center">Student Profile</h3>
+
+            <!-- Avatar -->
+            <div id="student-initials"
+                class="w-14 h-14 mx-auto rounded-full bg-gray-800 flex items-center justify-center text-white text-xl font-bold mb-3">
+                ?
+            </div>
+
+            <!-- Limited Fields -->
+            <p id="card-student-name" class="text-center text-gray-700 font-bold leading-loose">Loading...</p>
+            <p id="card-student-usn" class="text-center text-gray-600 text-sm"></p>
+            <p id="card-student-sem" class="text-center text-gray-600 text-sm leading-loose"></p>
+            <p id="card-student-section" class="text-center text-gray-600 text-sm"></p>
+        </div>
+        <!-- Recent Announcements -->
         <div id="recent-announcements"
-            class="fixed bottom-6 right-6 bg-white shadow-xl rounded-xl w-80 p-4 cursor-pointer border border-gray-200">
+            class="lg:m-20 bg-white shadow-xl rounded-xl w-100 p-7 cursor-pointer border border-gray-200">
             <h3 class="text-lg font-bold text-gray-800 mb-2">📢 Recent Announcements</h3>
             <ul id="recent-announcements-list" class="space-y-2 text-sm text-gray-700"></ul>
             <p class="text-blue-600 text-xs mt-3 text-right">Click to view all →</p>
         </div>
+    </div>
 
+    <!-- Main Section -->
+    <main class="flex-grow flex items-center justify-center">
+        <div class="grid grid-cols-3 gap-2 w-full max-w-4xl p-4 lg:gap-6">
+            <a href="studentMarks.html"
+                class="bg-white shadow-lg rounded-xl p-6 text-center hover:bg-blue-100 lg:w-60 lg:mr-3">
+                <i class="fa-solid fa-chart-simple text-3xl mb-2"></i>
+                <h2 class="font-semibold">Marks</h2>
+            </a>
 
-    </section>
+            <!-- Attendance -->
+            <a href="studentAttendance.html"
+                class="bg-white shadow-lg rounded-xl p-6 text-center hover:bg-blue-100 lg:w-60 lg:mr-3">
+                <i class="fa-solid fa-calendar-week text-3xl mb-2"></i>
+                <h2 class="font-semibold">Attendance</h2>
+            </a>
+
+            <!-- Notes -->
+            <a href="viewNotes.html" class="bg-white shadow-lg rounded-xl p-6 text-center lg:w-60 hover:bg-blue-100">
+                <i class="fa-solid fa-book text-3xl mb-2"></i>
+                <h2 class="font-semibold">Notes</h2>
+            </a>
+        </div>
+    </main>
+    <!-- Contact Section -->
     <section id="contact" class="min-h-screen bg-pink-100 flex flex-col items-center justify-center px-6">
         <h2 class="text-3xl md:text-5xl font-bold leading-loose">Contact Us</h2>
         <input id="email" type="text" placeholder="Enter your email"
@@ -68,6 +119,8 @@
             <img src="./images/spinner.svg" alt="Loading..." class="w-full h-full">
         </div>
     </section>
+
+    <!-- Footer -->
     <footer>
         <div class="bg-gray-800 text-white text-center py-6">
             <p>&copy; 2023 CSE Department. All rights reserved.</p>
@@ -79,22 +132,77 @@
             </div>
         </div>
     </footer>
+
     <script>
-        if (performance.navigation.type === 2) {  // user pressed back/forward
-            location.reload(true);  // force reload from server
+        if (performance.navigation.type === 2) {
+            location.reload(true);
         }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            fetch("/api/profile")
+                .then(res => res.json())
+                .then(data => {
+                    if (data.error) {
+                        alert(data.error);
+                        return;
+                    }
+
+                    // Fill Modal
+                    document.getElementById("student-name").textContent = data.name;
+                    document.getElementById("student-usn").textContent = `USN: ${data.usn}`;
+                    document.getElementById("student-section").textContent = `Section: ${data.section}`;
+                    document.getElementById("student-sem").textContent = `Semester: ${data.sem}`;
+                    document.getElementById("student-phone").textContent = `Phone: ${data.phone}`;
+                    document.getElementById("student-email").textContent = `Email: ${data.email}`;
+
+                    // Fill Card
+                    document.getElementById("card-student-name").textContent = data.name;
+                    document.getElementById("card-student-usn").textContent = `USN: ${data.usn}`;
+                    document.getElementById("card-student-section").textContent = `Section: ${data.section}`;
+                    document.getElementById("card-student-sem").textContent = `Semester: ${data.sem}`;
+
+                    // Initials
+                    const initials = data.name
+                        .split(" ")
+                        .map(word => word[0]?.toUpperCase())
+                        .slice(0, 2)
+                        .join("");
+                    document.getElementById("student-avatar").textContent = initials || "?";
+                    document.getElementById("student-initials").textContent = initials || "?";
+                })
+                .catch(err => console.error("Error loading student profile:", err));
+
+            // Modal handling
+            document.getElementById("openProfile").addEventListener("click", () => {
+                document.getElementById("student-profile-card").classList.remove("hidden");
+            });
+            document.getElementById("closeStudentProfile").addEventListener("click", () => {
+                document.getElementById("student-profile-card").classList.add("hidden");
+            });
+            window.addEventListener("click", (e) => {
+                const modal = document.getElementById("student-profile-card");
+                if (e.target === modal) modal.classList.add("hidden");
+            });
+
+            // Change Password
+            document.getElementById("studentChangePass").addEventListener("click", () => {
+                window.location.href = "changepass.html";
+            });
+
+            loadRecentAnnouncements();
+        });
+
         async function sendMessage() {
             const email = document.getElementById('email').value;
             const message = document.getElementById('message').value;
             const button = document.querySelector('button[onclick="sendMessage()"]');
             const loader = document.getElementById('loading');
 
-            // Show loader and disable button
             loader.classList.remove('hidden');
             button.disabled = true;
 
             try {
-                const res = await fetch("http://localhost:3000/contact", {
+                const res = await fetch("/contact", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ email, message }),
@@ -113,11 +221,11 @@
                 alert("Error sending message. Try again later.");
                 console.error(err);
             } finally {
-                // Hide loader and enable button
                 loader.classList.add('hidden');
                 button.disabled = false;
             }
         }
+
         async function loadRecentAnnouncements() {
             try {
                 const res = await fetch("/api/announcements");
@@ -126,7 +234,7 @@
                 const list = document.getElementById("recent-announcements-list");
                 list.innerHTML = "";
 
-                const recent = announcements.slice(0, 5); // only 5 announcements
+                const recent = announcements.slice(0, 5);
 
                 if (recent.length === 0) {
                     list.innerHTML = `<li class="text-gray-500">No announcements yet.</li>`;
@@ -137,13 +245,11 @@
                     const li = document.createElement("li");
                     li.className = "truncate";
                     li.innerHTML = `<span class="font-semibold">${a.title}</span> - 
-                      <span class="text-gray-600">${a.message?.slice(0, 40) || ""}...</span>`;
+            <span class="text-gray-600">${a.message?.slice(0, 40) || ""}...</span>`;
                     list.appendChild(li);
                 });
 
-                // Clicking modal → go to announcements page
-                const modal = document.getElementById("recent-announcements");
-                modal.addEventListener("click", () => {
+                document.getElementById("recent-announcements").addEventListener("click", () => {
                     window.location.href = "announcements.html";
                 });
 
@@ -151,16 +257,10 @@
                 console.error("Error fetching recent announcements:", err);
             }
         }
+
         function goHome() {
             window.location.href = "home.html";
         }
-
-        document.addEventListener("DOMContentLoaded", () => {
-            loadRecentAnnouncements();
-        });
-
-
-
     </script>
 </body>
 

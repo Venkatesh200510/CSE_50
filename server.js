@@ -52,15 +52,20 @@ const sessionStore = new MySQLStore(
 
 app.use(
   session({
-    key: "user_sid",                 // cookie name
+    key: "user_sid",
     secret: process.env.SESSION_SECRET || "supersecret",
-    store: sessionStore,             // ✅ use MySQL instead of MemoryStore
+    store: sessionStore,
     resave: false,
     saveUninitialized: false,
-   cookie: { httpOnly: true, secure: process.env.NODE_ENV === "production", // only secure in prod
-  sameSite: "lax", maxAge: 86400000 }
+    cookie: {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production", // ✅ only secure in production
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // ✅ allow cross-site cookies
+      maxAge: 1000 * 60 * 60 * 24, // 1 day
+    },
   })
 );
+
 
 app.use("/api/marks", marksRoutes);
 app.use("/contact", contactRoutes);
@@ -86,6 +91,7 @@ app.get("/api/session", (req, res) => {
   if (!req.session || !req.session.user) return res.json({ loggedIn: false });
   res.json({ loggedIn: true, user: req.session.user });
 });
+
 
 function isAuth(req, res, next) {
   if (req.session && req.session.user) return next();
@@ -124,9 +130,10 @@ app.get("/api/profile", isAuth, async (req, res) => {
   }
 });
 
+
 app.post("/logout", (req, res) => {
   req.session.destroy(() => {
-    res.clearCookie("connect.sid");
+    res.clearCookie("user_sid");
     res.redirect("/");
   });
 });
