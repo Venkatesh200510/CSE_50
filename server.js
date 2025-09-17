@@ -57,7 +57,8 @@ app.use(
     store: sessionStore,             // ✅ use MySQL instead of MemoryStore
     resave: false,
     saveUninitialized: false,
-   cookie: { httpOnly: true, secure: true, sameSite: "none", maxAge: 86400000 }
+   cookie: { httpOnly: true, secure: process.env.NODE_ENV === "production", // only secure in prod
+  sameSite: "lax", maxAge: 86400000 }
   })
 );
 
