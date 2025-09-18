@@ -9,7 +9,7 @@ sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 // ================== 1️⃣ Create / Update Marks ==================
 router.post("/", async (req, res) => {
-  const { department, usn, semester, subjects } = req.body;
+  const {usn, semester, subjects } = req.body;
 
   if (!usn || !semester || !Array.isArray(subjects)) {
     return res.status(400).json({ message: "Invalid request data" });
@@ -32,34 +32,26 @@ router.post("/", async (req, res) => {
         result = "F",
       } = sub;
 
+      // ⚠️ Railway-safe ON DUPLICATE KEY UPDATE using placeholders
       await conn.execute(
         `
         INSERT INTO marks 
           (usn, semester, subject_code, cie1, cie2, lab, assignment, \`external\`, \`internal\`, \`total\`, result)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON DUPLICATE KEY UPDATE 
-          cie1 = COALESCE(NULLIF(VALUES(cie1), 0), cie1),
-          cie2 = COALESCE(NULLIF(VALUES(cie2), 0), cie2),
-          lab = COALESCE(NULLIF(VALUES(lab), 0), lab),
-          assignment = COALESCE(NULLIF(VALUES(assignment), 0), assignment),
-          \`external\` = COALESCE(NULLIF(VALUES(\`external\`), 0), \`external\`),
-          \`internal\` = COALESCE(NULLIF(VALUES(\`internal\`), 0), \`internal\`),
-          \`total\` = COALESCE(NULLIF(VALUES(\`total\`), 0), \`total\`),
-          result = COALESCE(NULLIF(VALUES(result), ''), result),
+          cie1 = COALESCE(NULLIF(?, 0), cie1),
+          cie2 = COALESCE(NULLIF(?, 0), cie2),
+          lab = COALESCE(NULLIF(?, 0), lab),
+          assignment = COALESCE(NULLIF(?, 0), assignment),
+          \`external\` = COALESCE(NULLIF(?, 0), \`external\`),
+          \`internal\` = COALESCE(NULLIF(?, 0), \`internal\`),
+          \`total\` = COALESCE(NULLIF(?, 0), \`total\`),
+          result = COALESCE(NULLIF(?, ''), result),
           updated_at = CURRENT_TIMESTAMP
-      `,
+        `,
         [
-          usn,
-          semester,
-          code,
-          cie1,
-          cie2,
-          lab,
-          assignment,
-          external,
-          internal,
-          total,
-          result,
+          usn, semester, code, cie1, cie2, lab, assignment, external, internal, total, result,
+          cie1, cie2, lab, assignment, external, internal, total, result
         ]
       );
     }
@@ -94,7 +86,7 @@ Click here: https://cse50-production-f95c.up.railway.app/\n\nRegards,\nCSE Depar
   } catch (error) {
     await conn.rollback();
     console.error("🔥 Error saving marks:", error);
-    res.status(500).json({ message: "Database error", error });
+    res.status(500).json({ message: "Database error", error: error.message });
   } finally {
     conn.release();
   }

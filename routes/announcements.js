@@ -1,22 +1,26 @@
 const express = require("express");
 const router = express.Router();
 const multer = require("multer");
-const db = require("../db"); // adjust path if needed
-const {transporter} = require("../mailer"); // configure separately
-const { isAuth } = require("../middleware/auth"); // your auth middleware
+const db = require("../db");
+const sgMail = require("@sendgrid/mail");
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+const { isAuth } = require("../middleware/auth");
 
-// In-memory storage for file uploads
+// Multer memory storage for file uploads
 const upload = multer({ storage: multer.memoryStorage() });
+
+// Max recipients per batch (SendGrid limit ~1000, safer to use 100)
+const BATCH_SIZE = 100;
 
 // ================== 1️⃣ Create Announcement ==================
 router.post("/", isAuth, upload.single("file"), async (req, res) => {
   try {
     const { title, message } = req.body;
-    const faculty_name = req.user?.name || "Faculty"; // 👈 use logged-in faculty if available
-    const file_type = req.file ? req.file.mimetype : null;
-    const file_data = req.file ? req.file.buffer : null;
+    const faculty_name = req.user?.name || "Faculty";
+    const file_type = req.file?.mimetype || null;
+    const file_data = req.file?.buffer || null;
 
-    // Save in DB
+    // Save announcement in DB
     await db.execute(
       `INSERT INTO announcements (title, message, faculty_name, file_type, file_data, created_at)
        VALUES (?, ?, ?, ?, ?, NOW())`,
@@ -28,41 +32,56 @@ router.post("/", isAuth, upload.single("file"), async (req, res) => {
       "SELECT email FROM student WHERE email LIKE '%@gmail.com'"
     );
 
-   if (students.length > 0) {
-  const allEmails = students.map(s => s.email);
+    if (students.length > 0) {
+      // Filter valid emails
+      const allEmails = students
+        .map((s) => s.email)
+        .filter((email) => email && email.includes("@"));
 
-  const msg = {
-    from: {
-      name: "Dept Announcements",
-      email: "dams.project25@gmail.com", // ✅ must be verified in SendGrid
-    },
-    bcc: allEmails, // 👈 SendGrid supports this directly
-    subject: `📢 New Announcement: ${title}`,
-    text: `${message}\n\n- ${faculty_name}`,
-    attachments: file_data
-      ? [
-          {
-            filename: `${title}${file_type === "application/pdf" ? ".pdf" : ""}`,
-            content: file_data.toString("base64"), // ✅ base64 encode for SendGrid
-            type: file_type,
-            disposition: "attachment"
+      if (allEmails.length === 0) {
+        console.log("No valid recipients, skipping email.");
+      } else {
+        // Send emails in batches
+        for (let i = 0; i < allEmails.length; i += BATCH_SIZE) {
+          const batch = allEmails.slice(i, i + BATCH_SIZE);
+
+          const msg = {
+            from: {
+              name: "Dept Announcements",
+              email: "dams.project25@gmail.com", // ✅ Must be verified in SendGrid
+            },
+            bcc: batch,
+            subject: `📢 New Announcement: ${title}`,
+            text: `${message}\n\n- ${faculty_name}`,
+            attachments: file_data
+              ? [
+                  {
+                    filename: `${title}${file_type === "application/pdf" ? ".pdf" : ""}`,
+                    content: file_data.toString("base64"),
+                    type: file_type || "application/octet-stream",
+                    disposition: "attachment",
+                  },
+                ]
+              : [],
+          };
+
+          try {
+            await sgMail.send(msg);
+          } catch (err) {
+            console.error("SendGrid Error:", err.response?.body || err);
           }
-        ]
-      : [],
-  };
+        }
+      }
+    }
 
-  await sgMail.send(msg);
-}
-
-
-    res.json({ message: "Announcement created & email sent successfully!" });
+    res.json({ message: "Announcement created & emails sent successfully!" });
   } catch (err) {
     console.error("🔥 Error saving announcement:", err);
-    res.status(500).json({ error: "Database or email error" });
+    res.status(500).json({ error: err.message || "Database or email error" });
   }
 });
 
-// ================== 2️⃣ Fetch Announcements List ==================
+// ================== 2️⃣ Fetch Announcements ==================
 router.get("/", isAuth, async (req, res) => {
   try {
     const [rows] = await db.execute(
@@ -70,15 +89,15 @@ router.get("/", isAuth, async (req, res) => {
        FROM announcements ORDER BY created_at DESC`
     );
 
-    const announcements = rows.map(r => ({
+    const announcements = rows.map((r) => ({
       ...r,
-      file_url: r.file_type ? `/api/announcements/${r.id}/file` : null
+      file_url: r.file_type ? `/api/announcements/${r.id}/file` : null,
     }));
 
     res.json(announcements);
   } catch (err) {
     console.error("🔥 Error fetching announcements:", err);
-    res.status(500).json({ error: "Database error" });
+    res.status(500).json({ error: err.message || "Database error" });
   }
 });
 
@@ -92,11 +111,11 @@ router.get("/:id/file", isAuth, async (req, res) => {
     );
     if (!rows.length) return res.status(404).send("File not found");
 
-    res.setHeader("Content-Type", rows[0].file_type);
+    res.setHeader("Content-Type", rows[0].file_type || "application/octet-stream");
     res.send(rows[0].file_data);
   } catch (err) {
     console.error("🔥 Error serving file:", err);
-    res.status(500).json({ error: "Error loading file" });
+    res.status(500).json({ error: err.message || "Error loading file" });
   }
 });
 
