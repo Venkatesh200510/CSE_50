@@ -2,10 +2,10 @@ const express = require("express");
 const bcrypt = require("bcrypt");
 const db = require("../db"); // adjust if db connection is elsewhere
 const { isAuth } = require("../middleware/auth");
-const { Resend } = require("resend");
+const sgMail = require("@sendgrid/mail");
 
 const router = express.Router();
-const resend = new Resend(process.env.RESEND_API_KEY);
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 // In-memory OTP store
 let otpStore = {};
@@ -40,28 +40,34 @@ router.post("/change-password", isAuth, async (req, res) => {
 
 // ================== FORGOT PASSWORD (OTP) ==================
 router.post("/forgot-password", async (req, res) => {
-  const { email } = req.body;
+  const email = req.body.email?.trim();
+  if (!email) return res.status(400).json({ message: "Email required" });
+
   try {
     let [rows] = await db.query("SELECT * FROM student WHERE email=?", [email]);
-    if (!rows.length)
-      [rows] = await db.query("SELECT * FROM faculty WHERE email=?", [email]);
-
-    if (!rows.length)
-      return res.status(404).json({ message: "Email not registered" });
+    if (!rows.length) [rows] = await db.query("SELECT * FROM faculty WHERE email=?", [email]);
+    if (!rows.length) return res.status(404).json({ message: "Email not registered" });
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    otpStore[email] = { otp, expires: Date.now() + 300000 };
+    otpStore[email] = { otp, expires: Date.now() + 300000 }; // 5 min
 
-    await resend.emails.send({
-      from: "dams.project25@gmail.com", // ✅ must be verified in Resend dashboard
+    const msg = {
       to: email,
+      from: process.env.FROM_EMAIL,
       subject: "Password Reset OTP",
       text: `Your OTP is: ${otp} (valid for 5 minutes)`,
-    });
+      html: `<p>Your OTP is: <b>${otp}</b> (valid for 5 minutes)</p>`,
+    };
 
-    res.json({ message: "OTP sent to email" });
+    try {
+      await sgMail.send(msg);
+      res.json({ message: "OTP sent to email" });
+    } catch (error) {
+      console.error("SendGrid error:", error.response ? error.response.body : error);
+      res.status(500).json({ message: "Failed to send OTP email" });
+    }
   } catch (err) {
-    console.error("Error sending OTP:", err);
+    console.error(err);
     res.status(500).json({ message: "Server error" });
   }
 });

@@ -1,29 +1,13 @@
 const express = require("express");
 const db = require("../db");
-const { Resend } = require("resend"); 
+const sgMail = require("@sendgrid/mail");
 
 const router = express.Router();
 
-// ✅ Setup mail transporter
-const transporter = {
-  async sendMail({ to, subject, text, html }) {
-    try {
-      const response = await resend.emails.send({
-        from: "dams.project25@gmail.com", // must be verified in Resend
-        to,
-        subject,
-        text,
-        html,
-      });
-      console.log("Email sent:", response);
-      return response;
-    } catch (error) {
-      console.error("Error sending email:", error);
-      throw error;
-    }
-  },
-};
+// ✅ Setup SendGrid
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
+// ================== 1️⃣ Create / Update Marks ==================
 router.post("/", async (req, res) => {
   const { department, usn, semester, subjects } = req.body;
 
@@ -38,7 +22,6 @@ router.post("/", async (req, res) => {
     for (const sub of subjects) {
       const {
         code = "",
-        name = "",
         cie1 = 0,
         cie2 = 0,
         lab = 0,
@@ -49,26 +32,25 @@ router.post("/", async (req, res) => {
         result = "F",
       } = sub;
 
-      // ✅ Insert / Update Marks (marks table has "semester")
       await conn.execute(
         `
         INSERT INTO marks 
-          (usn, semester, subject_code, cie1, cie2, lab, assignment, external, internal, total, result)
+          (usn, semester, subject_code, cie1, cie2, lab, assignment, \`external\`, \`internal\`, \`total\`, result)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON DUPLICATE KEY UPDATE 
           cie1 = COALESCE(NULLIF(VALUES(cie1), 0), cie1),
           cie2 = COALESCE(NULLIF(VALUES(cie2), 0), cie2),
           lab = COALESCE(NULLIF(VALUES(lab), 0), lab),
           assignment = COALESCE(NULLIF(VALUES(assignment), 0), assignment),
-          external = COALESCE(NULLIF(VALUES(external), 0), external),
-          internal = COALESCE(NULLIF(VALUES(internal), 0), internal),
-          total = COALESCE(NULLIF(VALUES(total), 0), total),
+          \`external\` = COALESCE(NULLIF(VALUES(\`external\`), 0), \`external\`),
+          \`internal\` = COALESCE(NULLIF(VALUES(\`internal\`), 0), \`internal\`),
+          \`total\` = COALESCE(NULLIF(VALUES(\`total\`), 0), \`total\`),
           result = COALESCE(NULLIF(VALUES(result), ''), result),
           updated_at = CURRENT_TIMESTAMP
       `,
         [
           usn,
-          semester, // ✅ matches marks table column
+          semester,
           code,
           cie1,
           cie2,
@@ -84,23 +66,29 @@ router.post("/", async (req, res) => {
 
     await conn.commit();
 
-    // ✅ Send Email Notification after saving (student table has "sem")
+    // ✅ Send Email Notification after saving
     const [rows] = await db.execute(
-  "SELECT email FROM student WHERE usn = ? AND email LIKE '%@gmail.com'",
-  [usn]
-);
+      "SELECT email FROM student WHERE usn = ? AND email LIKE '%@gmail.com'",
+      [usn]
+    );
 
-if (rows.length > 0) {
-  const studentEmail = rows[0].email;
+    if (rows.length > 0) {
+      const studentEmail = rows[0].email;
 
-  await transporter.sendMail({
-    from: `"Dept Marks Update" <dams.project25@gmail.com>`,
-    to: studentEmail, // 🎯 only that student
-    subject: `📊 Marks Uploaded`,
-    text: `Dear Student,\n\nYour marks have been uploaded successfully. 
-Please log in to the student portal to view your detailed results.\n click here https://cse50-production-f95c.up.railway.app/\n\nRegards,\nCSE Department`,
-  });
-}
+      const msg = {
+        to: studentEmail,
+        from: {
+          name: "Dept Marks Update",
+          email: "dams.project25@gmail.com", // must be verified in SendGrid
+        },
+        subject: "📊 Marks Uploaded",
+        text: `Dear Student,\n\nYour marks have been uploaded successfully. 
+Please log in to the student portal to view your detailed results.\n
+Click here: https://cse50-production-f95c.up.railway.app/\n\nRegards,\nCSE Department`,
+      };
+
+      await sgMail.send(msg);
+    }
 
     res.json({ message: "Marks saved & email sent successfully" });
   } catch (error) {
@@ -112,16 +100,14 @@ Please log in to the student portal to view your detailed results.\n click here 
   }
 });
 
-// ================= GET MARKS =================
+// ================== 2️⃣ Get Marks ==================
 router.get("/:usn", async (req, res) => {
   try {
     let usn;
 
-    // Logged-in student
     if (req.session.user && req.session.user.role === "student") {
       usn = req.session.user.usn;
     } else {
-      // Guest: ?usn=...
       usn = req.params.usn || req.query.usn;
       if (!usn) {
         return res.status(401).json({ error: "Unauthorized. Please login or provide ?usn" });
@@ -137,14 +123,14 @@ router.get("/:usn", async (req, res) => {
         m.cie2,
         m.lab,
         m.assignment,
-        m.external,
+        m.\`external\`,
         s.credit,
         ((m.cie1 / 25) * 15 + m.cie2 + m.lab + m.assignment) AS internal,
-        ((m.cie1 / 25) * 15 + m.cie2 + m.lab + m.assignment + m.external) AS total,
+        ((m.cie1 / 25) * 15 + m.cie2 + m.lab + m.assignment + m.\`external\`) AS total,
         CASE 
             WHEN ((m.cie1 / 25) * 15 + m.cie2 + m.lab + m.assignment) >= 20
-                 AND m.external >= 18
-                 AND ((m.cie1 / 25) * 15 + m.cie2 + m.lab + m.assignment + m.external) >= 40
+                 AND m.\`external\` >= 18
+                 AND ((m.cie1 / 25) * 15 + m.cie2 + m.lab + m.assignment + m.\`external\`) >= 40
             THEN 'P'
             ELSE 'F'
         END AS result

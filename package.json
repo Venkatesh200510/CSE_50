@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "@sendgrid/mail": "^8.1.5",
     "@tailwindcss/cli": "^4.1.12",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.5",

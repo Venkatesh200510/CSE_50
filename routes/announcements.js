@@ -28,25 +28,32 @@ router.post("/", isAuth, upload.single("file"), async (req, res) => {
       "SELECT email FROM student WHERE email LIKE '%@gmail.com'"
     );
 
-    if (students.length > 0) {
-      const allEmails = students.map(s => s.email);
+   if (students.length > 0) {
+  const allEmails = students.map(s => s.email);
 
-      // Send email
-      await transporter.sendMail({
-        from: `"Dept Announcements" <yourgmail@gmail.com>`,
-        bcc: allEmails,
-        subject: `📢 New Announcement: ${title}`,
-        text: `${message}\n\n- ${faculty_name}`,
-        attachments: file_data
-          ? [
-              {
-                filename: `${title}${file_type === "application/pdf" ? ".pdf" : ""}`,
-                content: file_data
-              }
-            ]
-          : []
-      });
-    }
+  const msg = {
+    from: {
+      name: "Dept Announcements",
+      email: "dams.project25@gmail.com", // ✅ must be verified in SendGrid
+    },
+    bcc: allEmails, // 👈 SendGrid supports this directly
+    subject: `📢 New Announcement: ${title}`,
+    text: `${message}\n\n- ${faculty_name}`,
+    attachments: file_data
+      ? [
+          {
+            filename: `${title}${file_type === "application/pdf" ? ".pdf" : ""}`,
+            content: file_data.toString("base64"), // ✅ base64 encode for SendGrid
+            type: file_type,
+            disposition: "attachment"
+          }
+        ]
+      : [],
+  };
+
+  await sgMail.send(msg);
+}
+
 
     res.json({ message: "Announcement created & email sent successfully!" });
   } catch (err) {
