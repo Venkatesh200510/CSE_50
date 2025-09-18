@@ -103,6 +103,38 @@ app.get("/student-home", isAuth, (req, res) =>
 app.get("/profile", (req, res) =>
   res.sendFile(path.join(__dirname, "src", "profile.html"))
 );
+(async () => {
+  try {
+    // Create pool (keeps connections open for the whole app
+    // ================= STUDENTS =================
+    const students = JSON.parse(fs.readFileSync("student.json", "utf8"));
+    for (const s of students) {
+      const hashed = await bcrypt.hash(s.password, 10);
+      await db.query(
+        `INSERT IGNORE INTO student (usn, name, email, password, section, sem, phone, join_year)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [s.usn, s.name, s.email, hashed, s.section, s.sem, s.phone, s.join_year]
+      );
+    }
+
+    // ================= FACULTY =================
+    const faculty = JSON.parse(fs.readFileSync("faculty.json", "utf8"));
+    for (const f of faculty) {
+      console.log(f.ssn_id, f.email);
+      const hashed = await bcrypt.hash(f.password, 10);
+      await db.query(
+        `INSERT IGNORE INTO faculty (ssn_id, name, email, password, phone, position)
+     VALUES (?, ?, ?, ?, ?, ?)`,
+        [f.ssn_id, f.name, f.email, hashed, f.phone, f.position]
+      );
+    }
+
+    console.log("🎉 All data inserted successfully!");
+    // ⚠️ DO NOT close the pool here (no db.end())
+  } catch (err) {
+    console.error("❌ DB Error:", err);
+  }
+})();
 
 app.get("/api/profile", isAuth, async (req, res) => {
   try {
