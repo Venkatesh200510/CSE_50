@@ -52,7 +52,7 @@ const sessionStore = new MySQLStore(
 
 app.use(
   session({
-    key: "user_sid",                 // cookie name
+    key: "connect.sid",                // cookie name
     secret: process.env.SESSION_SECRET || "supersecret",
     store: sessionStore,             // ✅ use MySQL instead of MemoryStore
     resave: false,
