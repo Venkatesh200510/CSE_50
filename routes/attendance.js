@@ -211,4 +211,90 @@ router.post("/", async (req, res) => {
   }
 });
 
+router.post("/alert", async (req, res) => {
+  try {
+    const { usn } = req.body;
+    if (!usn) return res.status(400).json({ error: "USN required" });
+
+    // 1️⃣ Get student info + last alert timestamp
+    const [studentRows] = await db.execute(
+      "SELECT name, email, last_alert_sent FROM student WHERE usn = ?",
+      [usn]
+    );
+    if (!studentRows.length)
+      return res.status(404).json({ error: "Student not found" });
+
+    const student = studentRows[0];
+
+    // 2️⃣ Check 15-day cooldown
+    const now = new Date();
+    if (student.last_alert_sent) {
+      const lastSent = new Date(student.last_alert_sent);
+      const diffDays = Math.floor((now - lastSent) / (1000 * 60 * 60 * 24));
+      if (diffDays < 15) {
+        return res.json({ message: `Alert already sent ${diffDays} days ago` });
+      }
+    }
+
+    // 3️⃣ Get attendance summary
+    const [attendanceRows] = await db.execute(
+      `
+      SELECT s.subject_name, 
+             SUM(a.hours) AS total_classes,
+             SUM(CASE WHEN a.status='Present' THEN a.hours ELSE 0 END) AS attended_classes
+      FROM attendance a
+      JOIN subjects s ON a.subject_code = s.subject_code
+      WHERE a.usn = ?
+      GROUP BY a.subject_code
+      `,
+      [usn]
+    );
+
+    if (!attendanceRows.length)
+      return res.status(404).json({ error: "No attendance records found" });
+
+    // 4️⃣ Check shortage (<85%)
+    const shortageSubjects = attendanceRows
+      .map(r => {
+        const percentage = r.total_classes
+          ? Math.round((r.attended_classes / r.total_classes) * 100)
+          : 0;
+        return percentage < 85 ? `${r.subject_name} (${percentage}%)` : null;
+      })
+      .filter(Boolean);
+
+    if (!shortageSubjects.length) {
+      return res.json({ message: "No attendance shortage" });
+    }
+
+    // 5️⃣ Send email using SendGrid
+    const msg = {
+      to: student.email,
+      from: "dams.project25@gmail.com", // Verified SendGrid sender
+      subject: "⚠️ Attendance Shortage Alert",
+      text: `Dear ${student.name},\n\nYour attendance is below 85% in the following subjects:\n\n${shortageSubjects.join(
+        "\n"
+      )}\n\nPlease take necessary action.\n\nRegards,\nCSE Department`,
+    };
+
+    await sgMail.send(msg);
+
+    // 6️⃣ Update last_alert_sent
+    await db.execute(
+      "UPDATE student SET last_alert_sent=? WHERE usn=?",
+      [now, usn]
+    );
+
+    res.json({
+      message: "Alert email sent successfully via SendGrid",
+      shortageSubjects,
+    });
+
+  } catch (err) {
+    console.error("🔥 Attendance alert error:", err);
+    res.status(500).json({ error: "Failed to send alert via SendGrid" });
+  }
+});
+  
+
 module.exports = router;

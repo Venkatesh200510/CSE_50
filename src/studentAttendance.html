@@ -78,10 +78,27 @@
         </div>
     </div>
 
+
     <script>
         let attendanceChart;
         let loggedIn = false;
         let currentUSN = null;
+
+        // Automatically send attendance alert
+        async function sendAttendanceAlert(shortageSubjects, usn, studentName) {
+            if (!shortageSubjects.length) return;
+
+            try {
+                await fetch("/api/attendance/alert", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ usn })
+                });
+                console.log(`Attendance alert sent for ${studentName}: ${shortageSubjects.join(", ")}`);
+            } catch (err) {
+                console.error("Error sending attendance alert:", err);
+            }
+        }
 
         // Load summary table
         async function loadAttendance(usn = null) {
@@ -89,13 +106,11 @@
                 let res, result;
 
                 if (loggedIn && !usn) {
-                    // Logged in user → use session
                     res = await fetch("/api/attendance/me", { credentials: "include" });
                     result = await res.json();
                     if (!res.ok) throw new Error(result.error || "Not logged in");
                     currentUSN = result.usn;
                 } else {
-                    // Not logged in → use manual USN
                     if (!usn) throw new Error("USN required");
                     res = await fetch(`/api/attendance/me?usn=${usn}`);
                     result = await res.json();
@@ -103,8 +118,10 @@
                     currentUSN = usn;
                 }
 
+                const studentName = result.name || "Unknown";
+
                 // Student Info
-                document.getElementById("student-name").textContent = result.name || "Unknown";
+                document.getElementById("student-name").textContent = studentName;
                 document.getElementById("student-usn").textContent = result.usn;
                 document.getElementById("student-sem").textContent = result.semester || "-";
 
@@ -115,24 +132,27 @@
 
                 result.data.forEach(row => {
                     const percentage = ((row.attended_classes / row.total_classes) * 100).toFixed(0);
-                    if (percentage < 75) shortageSubjects.push(`${row.subject_name} (${percentage}%)`);
+                    if (percentage < 85) shortageSubjects.push(`${row.subject_name} (${percentage}%)`);
 
                     const tr = document.createElement("tr");
                     tr.className = "border-b hover:bg-gray-50";
                     tr.innerHTML = `
-            <td class="py-3 px-4">${row.subject_name}</td>
-            <td class="py-3 px-4 text-center">${row.total_classes}</td>
-            <td class="py-3 px-4 text-center">${row.attended_classes}</td>
-            <td class="py-3 px-4 text-center ${percentage < 75 ? 'text-red-500' : 'text-green-500'} font-bold">${percentage}%</td>
-          `;
+                    <td class="py-3 px-4">${row.subject_name}</td>
+                    <td class="py-3 px-4 text-center">${row.total_classes}</td>
+                    <td class="py-3 px-4 text-center">${row.attended_classes}</td>
+                    <td class="py-3 px-4 text-center ${percentage < 85 ? 'text-red-500' : 'text-green-500'} font-bold">${percentage}%</td>
+                `;
                     tbody.appendChild(tr);
                 });
 
-                // Shortage Warning
+                // Shortage Warning + auto-send email
                 const shortageDiv = document.getElementById("shortage-warning");
                 if (shortageSubjects.length > 0) {
                     shortageDiv.classList.remove("hidden");
                     shortageDiv.textContent = `⚠️ Attendance shortage in: ${shortageSubjects.join(", ")}`;
+
+                    // Auto send email alert (backend ensures 15-day cooldown)
+                    sendAttendanceAlert(shortageSubjects, result.usn, studentName);
                 } else {
                     shortageDiv.classList.add("hidden");
                 }
@@ -225,7 +245,6 @@
             });
         }
 
-        // Manual USN load
         function loadWithUSN() {
             const usn = document.getElementById("manual-usn").value.trim();
             if (!usn) return alert("Enter USN");
@@ -234,7 +253,6 @@
 
         async function goHome() {
             try {
-                // Check session again (fresh check)
                 const res = await fetch("/api/attendance/me", { credentials: "include" });
                 if (res.ok) {
                     window.location.href = "studentHome.html";
@@ -245,15 +263,14 @@
                 window.location.href = "home.html";
             }
         }
+
         async function initPage() {
             try {
-                // Try session-based first
                 const res = await fetch("/api/attendance/me", { credentials: "include" });
                 if (res.ok) {
                     loggedIn = true;
                     await loadAttendance();
                 } else {
-                    // Not logged in → show USN input box
                     document.getElementById("usn-input-box").classList.remove("hidden");
                 }
             } catch {
@@ -263,6 +280,8 @@
 
         document.addEventListener("DOMContentLoaded", initPage);
     </script>
+
+
 </body>
 
 </html>
