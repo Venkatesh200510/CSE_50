@@ -98,7 +98,12 @@ function isAuth(req, res, next) {
 }
 
 app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "src", "home.html"));
+  if (req.session.user) {
+    return res.redirect(
+      req.session.user.role === "student" ? "/student-home" : "/faculty-home"
+    );
+  }
+  res.sendFile(path.join(__dirname, "src", "login.html"));
 });
 
 app.get("/faculty-home", isAuth, (req, res) =>
@@ -107,6 +112,7 @@ app.get("/faculty-home", isAuth, (req, res) =>
 app.get("/student-home", isAuth, (req, res) =>
   res.sendFile(path.join(__dirname, "src", "studentHome.html"))
 );
+
 app.get("/profile", (req, res) =>
   res.sendFile(path.join(__dirname, "src", "profile.html"))
 );
