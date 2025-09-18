@@ -57,15 +57,15 @@ app.use(
     secret: process.env.SESSION_SECRET || "supersecret",
     resave: false,
     saveUninitialized: false,
+    store: sessionStore, // ✅ added MySQL store
     cookie: {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production", // true in Railway
+      secure: process.env.NODE_ENV === "production",
       sameSite: "none",
-      maxAge: 86400000,
+      maxAge: 86400000, // 1 day
     },
   })
 );
-
 
 app.use("/api/marks", marksRoutes);
 app.use("/contact", contactRoutes);
@@ -97,9 +97,13 @@ function isAuth(req, res, next) {
   res.redirect("/");
 }
 
-  app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "src", "home.html"));
+app.get("/", (req, res) => {
+  if (req.session.user) {
+    return res.redirect(req.session.user.role === "student" ? "/student-home" : "/faculty-home");
+  }
+  res.sendFile(path.join(__dirname, "src", "login.html"));
 });
+
 app.get("/faculty-home", isAuth, (req, res) =>
   res.sendFile(path.join(__dirname, "src", "facultyHome.html"))
 );
