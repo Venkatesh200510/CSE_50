@@ -94,8 +94,10 @@
                 const res = await fetch(url, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(credentials)
+                    body: JSON.stringify(credentials),
+                    credentials: "include"   // 👈 important for Railway
                 });
+
                 const data = await res.json();
                 if (data.success) {
                     window.location.href = data.redirect;
