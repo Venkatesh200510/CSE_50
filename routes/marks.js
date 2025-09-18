@@ -9,7 +9,7 @@ sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 // ================== 1️⃣ Create / Update Marks ==================
 router.post("/", async (req, res) => {
-  const {usn, semester, subjects } = req.body;
+  const { usn, semester, subjects } = req.body;
 
   if (!usn || !semester || !Array.isArray(subjects)) {
     return res.status(400).json({ message: "Invalid request data" });
@@ -20,19 +20,17 @@ router.post("/", async (req, res) => {
     await conn.beginTransaction();
 
     for (const sub of subjects) {
-      const {
-        code = "",
-        cie1 = 0,
-        cie2 = 0,
-        lab = 0,
-        assignment = 0,
-        external = 0,
-        internal = 0,
-        total = 0,
-        result = "F",
-      } = sub;
+      const code = sub.code || "";
+      const cie1 = Number(sub.cie1) || 0;
+      const cie2 = Number(sub.cie2) || 0;
+      const lab = Number(sub.lab) || 0;
+      const assignment = Number(sub.assignment) || 0;
+      const external = Number(sub.external) || 0;
+      const internal = Number(sub.internal) || 0;
+      const total = Number(sub.total) || 0;
+      const result = sub.result || "F";
 
-      // ⚠️ Railway-safe ON DUPLICATE KEY UPDATE using placeholders
+      // ⚠️ Ensure marks table has UNIQUE KEY (usn, semester, subject_code)
       await conn.execute(
         `
         INSERT INTO marks 
@@ -66,27 +64,26 @@ router.post("/", async (req, res) => {
 
     if (rows.length > 0) {
       const studentEmail = rows[0].email;
-
-      const msg = {
-        to: studentEmail,
-        from: {
-          name: "Dept Marks Update",
-          email: "dams.project25@gmail.com", // must be verified in SendGrid
-        },
-        subject: "📊 Marks Uploaded",
-        text: `Dear Student,\n\nYour marks have been uploaded successfully. 
+      try {
+        await sgMail.send({
+          to: studentEmail,
+          from: { name: "Dept Marks Update", email: "dams.project25@gmail.com" },
+          subject: "📊 Marks Uploaded",
+          text: `Dear Student,\n\nYour marks have been uploaded successfully. 
 Please log in to the student portal to view your detailed results.\n
 Click here: https://cse50-production-f95c.up.railway.app/\n\nRegards,\nCSE Department`,
-      };
-
-      await sgMail.send(msg);
+        });
+      } catch (emailErr) {
+        console.error("⚠️ SendGrid Error:", emailErr);
+      }
     }
 
     res.json({ message: "Marks saved & email sent successfully" });
+
   } catch (error) {
     await conn.rollback();
-    console.error("🔥 Error saving marks:", error);
-    res.status(500).json({ message: "Database error", error: error.message });
+    console.error("🔥 SQL Error:", JSON.stringify(error, null, 2));
+    res.status(500).json({ message: "Database error", error: error.sqlMessage || error.message, code: error.code });
   } finally {
     conn.release();
   }
@@ -96,50 +93,36 @@ Click here: https://cse50-production-f95c.up.railway.app/\n\nRegards,\nCSE Depar
 router.get("/:usn", async (req, res) => {
   try {
     let usn;
-
     if (req.session.user && req.session.user.role === "student") {
       usn = req.session.user.usn;
     } else {
       usn = req.params.usn || req.query.usn;
-      if (!usn) {
-        return res.status(401).json({ error: "Unauthorized. Please login or provide ?usn" });
-      }
+      if (!usn) return res.status(401).json({ error: "Unauthorized. Please login or provide ?usn" });
     }
 
     const [rows] = await db.query(
-      `SELECT 
-        m.subject_code,
-        s.subject_name,
-        m.semester,
-        m.cie1,
-        m.cie2,
-        m.lab,
-        m.assignment,
-        m.\`external\`,
-        s.credit,
+      `SELECT m.subject_code, s.subject_name, m.semester,
+        m.cie1, m.cie2, m.lab, m.assignment, m.\`external\`, s.credit,
         ((m.cie1 / 25) * 15 + m.cie2 + m.lab + m.assignment) AS internal,
         ((m.cie1 / 25) * 15 + m.cie2 + m.lab + m.assignment + m.\`external\`) AS total,
         CASE 
-            WHEN ((m.cie1 / 25) * 15 + m.cie2 + m.lab + m.assignment) >= 20
-                 AND m.\`external\` >= 18
-                 AND ((m.cie1 / 25) * 15 + m.cie2 + m.lab + m.assignment + m.\`external\`) >= 40
-            THEN 'P'
-            ELSE 'F'
+          WHEN ((m.cie1 / 25) * 15 + m.cie2 + m.lab + m.assignment) >= 20
+               AND m.\`external\` >= 18
+               AND ((m.cie1 / 25) * 15 + m.cie2 + m.lab + m.assignment + m.\`external\`) >= 40
+          THEN 'P' ELSE 'F'
         END AS result
-      FROM marks m
-      JOIN subjects s ON m.subject_code = s.subject_code
-      WHERE m.usn = ?;`,
+       FROM marks m
+       JOIN subjects s ON m.subject_code = s.subject_code
+       WHERE m.usn = ?;`,
       [usn]
     );
 
-    if (rows.length === 0) {
-      return res.status(404).json({ message: "No marks found for this USN" });
-    }
-
+    if (!rows.length) return res.status(404).json({ message: "No marks found for this USN" });
     res.json({ usn, subjects: rows });
+
   } catch (err) {
-    console.error("DB Error:", err.message);
-    res.status(500).json({ message: "Database error", error: err.message });
+    console.error("🔥 DB Error:", err);
+    res.status(500).json({ message: "Database error", error: err.sqlMessage || err.message, code: err.code });
   }
 });
 
