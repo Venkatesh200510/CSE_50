@@ -27,10 +27,11 @@ const PORT = process.env.PORT || 3000;
 
 app.use(
   cors({
-    origin: ["http://localhost:3000","https://cse50-production-f95c.up.railway.app/"],
+    origin: process.env.CLIENT_URL || "http://localhost:3000",
     credentials: true,
   })
 );
+
 app.use(bodyParser.json());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -52,15 +53,19 @@ const sessionStore = new MySQLStore(
 
 app.use(
   session({
-    key: "user_sid",                 // cookie name
+    key: "connect.sid",
     secret: process.env.SESSION_SECRET || "supersecret",
-    store: sessionStore,             // ✅ use MySQL instead of MemoryStore
     resave: false,
     saveUninitialized: false,
-   cookie: { httpOnly: true, secure: process.env.NODE_ENV === "production", // only secure in prod
-  sameSite: "lax", maxAge: 86400000 }
+    cookie: {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production", // true in Railway
+      sameSite: "none",
+      maxAge: 86400000,
+    },
   })
 );
+
 
 app.use("/api/marks", marksRoutes);
 app.use("/contact", contactRoutes);
