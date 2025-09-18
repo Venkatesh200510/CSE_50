@@ -29,34 +29,36 @@ router.post("/", async (req, res) => {
       const internal = Number(sub.internal) || 0;
       const total = Number(sub.total) || 0;
       const result = sub.result || "F";
+      const isLab = sub.isLab ? 1 : 0;
 
       // ⚠️ Ensure marks table has UNIQUE KEY (usn, semester, subject_code)
       await conn.execute(
         `
         INSERT INTO marks 
-          (usn, semester, subject_code, cie1, cie2, lab, assignment, \`external\`, \`internal\`, \`total\`, result)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          (usn, semester, subject_code, cie1, cie2, lab, assignment, \`external\`, \`internal\`, \`total\`, result, is_lab)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON DUPLICATE KEY UPDATE 
-          cie1 = COALESCE(NULLIF(?, 0), cie1),
-          cie2 = COALESCE(NULLIF(?, 0), cie2),
-          lab = COALESCE(NULLIF(?, 0), lab),
-          assignment = COALESCE(NULLIF(?, 0), assignment),
-          \`external\` = COALESCE(NULLIF(?, 0), \`external\`),
-          \`internal\` = COALESCE(NULLIF(?, 0), \`internal\`),
-          \`total\` = COALESCE(NULLIF(?, 0), \`total\`),
-          result = COALESCE(NULLIF(?, ''), result),
+          cie1 = ?,
+          cie2 = ?,
+          lab = ?,
+          assignment = ?,
+          \`external\` = ?,
+          \`internal\` = ?,
+          \`total\` = ?,
+          result = ?,
+          is_lab = ?,
           updated_at = CURRENT_TIMESTAMP
         `,
         [
-          usn, semester, code, cie1, cie2, lab, assignment, external, internal, total, result,
-          cie1, cie2, lab, assignment, external, internal, total, result
+          usn, semester, code, cie1, cie2, lab, assignment, external, internal, total, result, isLab,
+          cie1, cie2, lab, assignment, external, internal, total, result, isLab
         ]
       );
     }
 
     await conn.commit();
 
-    // ✅ Send Email Notification after saving
+    // ✅ Send Email Notification
     const [rows] = await db.execute(
       "SELECT email FROM student WHERE usn = ? AND email LIKE '%@gmail.com'",
       [usn]
@@ -102,13 +104,13 @@ router.get("/:usn", async (req, res) => {
 
     const [rows] = await db.query(
       `SELECT m.subject_code, s.subject_name, m.semester,
-        m.cie1, m.cie2, m.lab, m.assignment, m.\`external\`, s.credit,
-        ((m.cie1 / 25) * 15 + m.cie2 + m.lab + m.assignment) AS internal,
-        ((m.cie1 / 25) * 15 + m.cie2 + m.lab + m.assignment + m.\`external\`) AS total,
+        m.cie1, m.cie2, m.lab, m.assignment, m.\`external\`, s.credit, m.is_lab,
+        (CASE WHEN m.is_lab = 1 THEN CEIL((m.cie1 + m.cie2)/50*15) ELSE CEIL((m.cie1 + m.cie2)/50*25) END + m.lab + m.assignment) AS internal,
+        (CASE WHEN m.is_lab = 1 THEN CEIL((m.cie1 + m.cie2)/50*15) ELSE CEIL((m.cie1 + m.cie2)/50*25) END + m.lab + m.assignment + m.\`external\`) AS total,
         CASE 
-          WHEN ((m.cie1 / 25) * 15 + m.cie2 + m.lab + m.assignment) >= 20
+          WHEN (CASE WHEN m.is_lab = 1 THEN CEIL((m.cie1 + m.cie2)/50*15) ELSE CEIL((m.cie1 + m.cie2)/50*25) END + m.lab + m.assignment) >= 20
                AND m.\`external\` >= 18
-               AND ((m.cie1 / 25) * 15 + m.cie2 + m.lab + m.assignment + m.\`external\`) >= 40
+               AND (CASE WHEN m.is_lab = 1 THEN CEIL((m.cie1 + m.cie2)/50*15) ELSE CEIL((m.cie1 + m.cie2)/50*25) END + m.lab + m.assignment + m.\`external\`) >= 40
           THEN 'P' ELSE 'F'
         END AS result
        FROM marks m
