@@ -170,75 +170,7 @@
                 button.disabled = false;
             }
         }
-        async function loadAnnouncements() {
-            try {
-                const res = await fetch("/api/announcements");
-                const announcements = await res.json();
-
-                const container = document.getElementById("announcements-container");
-                container.innerHTML = "";
-
-                if (!announcements || announcements.length === 0) {
-                    container.innerHTML = `
-            <div class="bg-white/90 backdrop-blur-lg p-8 rounded-2xl shadow-xl text-center">
-              <p class="text-gray-500 text-lg">No announcements available.</p>
-            </div>`;
-                    return;
-                }
-
-                announcements.forEach(a => {
-                    const fileSection = (() => {
-                        if (!a.file_url) return "";
-                        if (a.file_type && a.file_type.startsWith("image/")) {
-                            return `
-                <div class="mt-4">
-                  <img src="${a.file_url}" alt="attachment"
-                       class="rounded-xl shadow-lg max-h-72 mx-auto border border-gray-200"/>
-                </div>`;
-                        } else if (a.file_type === "application/pdf") {
-                            return `
-    <div class="mt-4">
-      <object data="${a.file_url}" type="application/pdf"
-              class="w-full h-72 rounded-lg border shadow"></object>
-      <div class="flex justify-center space-x-6 mt-3">
-        <a href="${a.file_url}" target="_blank"
-           class="px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 shadow-md transition">
-          📄 View PDF
-        </a>
-        <a href="${a.file_url}" download
-           class="px-4 py-2 rounded-lg bg-green-600 text-white font-semibold hover:bg-green-700 shadow-md transition">
-          ⬇ Download PDF
-        </a>
-      </div>
-    </div>`;
-                        }
-                        else {
-                            return `
-                <div class="mt-4">
-                  <a href="${a.file_url}" download
-                     class="inline-block px-4 py-2 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-700 shadow-md transition">
-                    📎 Download Attachment
-                  </a>
-                </div>`;
-                        }
-                    })();
-
-                    const card = document.createElement("div");
-                    card.className =
-                        "bg-white/90 backdrop-blur-md p-6 rounded-3xl shadow-xl hover:shadow-2xl transition transform hover:-translate-y-1";
-                    card.innerHTML = `
-            <h2 class="text-2xl font-bold text-gray-800 mb-2">${a.title}</h2>
-            <p class="text-sm text-gray-500 mb-3">By ${a.faculty_name || "Faculty"} • ${new Date(a.created_at).toLocaleString()}</p>
-            <p class="text-gray-700 leading-relaxed whitespace-pre-line">${a.message || ""}</p>
-            ${fileSection}
-          `;
-                    container.appendChild(card);
-                });
-            } catch (err) {
-                console.error("Error loading announcements:", err);
-                alert("Failed to load announcements.");
-            }
-        }
+       
 
         function login() {
             window.location.href = "login.html";
