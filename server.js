@@ -27,11 +27,10 @@ const PORT = process.env.PORT || 3000;
 
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || "http://localhost:3000",
+    origin: ["http://localhost:3000","https://cse50-production-f95c.up.railway.app/"],
     credentials: true,
   })
 );
-
 app.use(bodyParser.json());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -53,17 +52,13 @@ const sessionStore = new MySQLStore(
 
 app.use(
   session({
-    key: "connect.sid",
+    key: "user_sid",                 // cookie name
     secret: process.env.SESSION_SECRET || "supersecret",
+    store: sessionStore,             // ✅ use MySQL instead of MemoryStore
     resave: false,
     saveUninitialized: false,
-    store: sessionStore, // ✅ added MySQL store
-    cookie: {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "none",
-      maxAge: 86400000, // 1 day
-    },
+   cookie: { httpOnly: true, secure: process.env.NODE_ENV === "production", // only secure in prod
+  sameSite: "lax", maxAge: 86400000 }
   })
 );
 
@@ -97,22 +92,15 @@ function isAuth(req, res, next) {
   res.redirect("/");
 }
 
-app.get("/", (req, res) => {
-  if (req.session.user) {
-    return res.redirect(
-      req.session.user.role === "student" ? "/student-home" : "/faculty-home"
-    );
-  }
+  app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "src", "home.html"));
 });
-
 app.get("/faculty-home", isAuth, (req, res) =>
   res.sendFile(path.join(__dirname, "src", "facultyHome.html"))
 );
 app.get("/student-home", isAuth, (req, res) =>
   res.sendFile(path.join(__dirname, "src", "studentHome.html"))
 );
-
 app.get("/profile", (req, res) =>
   res.sendFile(path.join(__dirname, "src", "profile.html"))
 );
