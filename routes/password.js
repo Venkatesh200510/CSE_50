@@ -64,7 +64,7 @@ router.post("/forgot-password", async (req, res) => {
     try {
       await sgMail.send(msg);
       console.log(`✅ OTP sent to ${email}`);
-      res.json({ message: "OTP sent to email" });
+      res.json({ message: "OTP sent to email " });
     } catch (error) {
       console.error("❌ SendGrid error:", error.response ? error.response.body : error);
       res.status(500).json({ message: "Failed to send OTP email" });
@@ -107,4 +107,4 @@ router.post("/reset-password", async (req, res) => {
 });
 
 
-module.exports = router;
+module.exports = router; 
