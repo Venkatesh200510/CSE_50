@@ -51,17 +51,14 @@ const sessionStore = new MySQLStore({
 
 app.use(
   session({
-    key: "connect.sid", // cookie name
+    key: "connect.sid",                // cookie name
     secret: process.env.SESSION_SECRET || "supersecret",
-    store: sessionStore,
+    store: sessionStore,             // ✅ use MySQL instead of MemoryStore
     resave: false,
     saveUninitialized: false,
-    cookie: {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production", // secure only in production
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-      maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
-    },
+   cookie: { httpOnly: true, secure: false, // only secure in prod
+  sameSite: "lax", maxAge: 1000 * 60 * 60 * 24 * 7, 
+ }
   })
 );
 
