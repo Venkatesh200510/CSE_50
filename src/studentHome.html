@@ -9,7 +9,7 @@
     <link href="./output.css" rel="stylesheet">
 </head>
 
-<body class="bg-blue-400 min-h-screen flex flex-col">
+<body class="bg-gray-200 min-h-screen flex flex-col">
 
     <!-- Header -->
     <header class="bg-gray-800 text-white p-7 text-center shadow-md">
@@ -17,93 +17,96 @@
     </header>
 
     <!-- Profile Modal (Full Details) -->
-    <div id="student-profile-card" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-        <div class="bg-white rounded-lg w-96 p-6 relative shadow-lg">
-            <!-- Close Button -->
-            <button id="closeStudentProfile"
-                class="absolute top-3 right-3 text-white w-6 h-6 rounded-full pb-1 bg-red-600 flex items-center justify-center">
-                x
-            </button>
+    <section class="flex-grow">
+        <div id="student-profile-card" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div class="bg-white rounded-lg w-96 p-6 relative shadow-lg">
+                <!-- Close Button -->
+                <button id="closeStudentProfile"
+                    class="absolute top-3 right-3 text-white w-6 h-6 rounded-full pb-1 bg-red-600 flex items-center justify-center">
+                    x
+                </button>
 
-            <!-- Profile Info -->
-            <div class="text-center space-y-2">
-                <div id="student-avatar"
-                    class="w-14 h-14 mx-auto rounded-full bg-gray-800 flex items-center justify-center text-white text-xl font-bold">
+                <!-- Profile Info -->
+                <div class="text-center space-y-2">
+                    <div id="student-avatar"
+                        class="w-14 h-14 mx-auto rounded-full bg-gray-800 flex items-center justify-center text-white text-xl font-bold">
+                        ?
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-600" id="student-name">Loading...</h2>
+                    <p id="student-usn" class="text-gray-600"></p>
+                    <p id="student-section" class="text-gray-600"></p>
+                    <p id="student-sem" class="text-gray-600"></p>
+                    <p id="student-phone" class="text-gray-600"></p>
+                    <p id="student-email" class="text-gray-600"></p>
+
+                    <!-- Buttons -->
+                    <div class="mt-5 space-y-3">
+                        <button id="studentChangePass"
+                            class="bg-blue-500 text-white px-4 py-2 rounded w-40 hover:bg-blue-600">
+                            Change Password
+                        </button>
+                        <form action="/logout" method="POST">
+                            <button type="submit" class="bg-red-500 text-white px-4 py-2 rounded w-40 hover:bg-red-600">
+                                Logout
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Profile Card (Quick Info) -->
+        <div class="flex flex-col justify-between items-center shadow-md m-5">
+            <div id="openProfile"
+                class="lg:m-20 lg:w-80 w-70 lg:p-6 p-6 mb-10 bg-white shadow-xl rounded-xl cursor-pointer border border-gray-200">
+                <h3 class="text-xl font-bold text-gray-800 mb-4 text-center">Student Profile</h3>
+
+                <!-- Avatar -->
+                <div id="student-initials"
+                    class="w-14 h-14 mx-auto rounded-full bg-gray-800 flex items-center justify-center text-white text-xl font-bold mb-3">
                     ?
                 </div>
-                <h2 class="text-2xl font-bold text-gray-600" id="student-name">Loading...</h2>
-                <p id="student-usn" class="text-gray-600"></p>
-                <p id="student-section" class="text-gray-600"></p>
-                <p id="student-sem" class="text-gray-600"></p>
-                <p id="student-phone" class="text-gray-600"></p>
-                <p id="student-email" class="text-gray-600"></p>
 
-                <!-- Buttons -->
-                <div class="mt-5 space-y-3">
-                    <button id="studentChangePass"
-                        class="bg-blue-500 text-white px-4 py-2 rounded w-40 hover:bg-blue-600">
-                        Change Password
-                    </button>
-                    <form action="/logout" method="POST">
-                        <button type="submit" class="bg-red-500 text-white px-4 py-2 rounded w-40 hover:bg-red-600">
-                            Logout
-                        </button>
-                    </form>
-                </div>
+                <!-- Limited Fields -->
+                <p id="card-student-name" class="text-center text-gray-700 font-bold leading-loose">Loading...</p>
+                <p id="card-student-usn" class="text-center text-gray-600 text-sm"></p>
+                <p id="card-student-sem" class="text-center text-gray-600 text-sm leading-loose"></p>
+                <p id="card-student-section" class="text-center text-gray-600 text-sm"></p>
+            </div>
+            <!-- Recent Announcements -->
+            <div id="recent-announcements"
+                class="lg:m-20 bg-white shadow-xl rounded-xl w-100 p-7 cursor-pointer border border-gray-200 ml-5">
+                <h3 class="text-lg font-bold text-gray-800 mb-2">📢 Recent Announcements</h3>
+                <ul id="recent-announcements-list" class="space-y-2 text-sm text-gray-700"></ul>
+                <p class="text-blue-600 text-xs mt-3 text-right">Click to view all →</p>
             </div>
         </div>
-    </div>
 
-    <!-- Profile Card (Quick Info) -->
-    <div class="flex justify-between items-center p-4 bg-white shadow-md">
-        <div id="openProfile"
-            class="lg:m-20 lg:w-80 lg:p-6 bg-white shadow-xl rounded-xl cursor-pointer border border-gray-200">
-            <h3 class="text-xl font-bold text-gray-800 mb-4 text-center">Student Profile</h3>
+        <!-- Main Section -->
+        <main class="flex-grow flex items-center justify- mt-7">
+            <div class="grid grid-cols-3 gap-2 w-full max-w-4xl p-4 lg:gap-6">
+                <a href="studentMarks.html"
+                    class="bg-white shadow-lg rounded-xl p-6 text-center hover:bg-blue-100 lg:w-60 lg:mr-3">
+                    <i class="fa-solid fa-chart-simple text-3xl mb-2"></i>
+                    <h2 class="font-semibold">Marks</h2>
+                </a>
 
-            <!-- Avatar -->
-            <div id="student-initials"
-                class="w-14 h-14 mx-auto rounded-full bg-gray-800 flex items-center justify-center text-white text-xl font-bold mb-3">
-                ?
+                <!-- Attendance -->
+                <a href="studentAttendance.html"
+                    class="bg-white shadow-lg rounded-xl p-6 text-center hover:bg-blue-100 lg:w-60 lg:mr-3">
+                    <i class="fa-solid fa-calendar-week text-3xl mb-2"></i>
+                    <h2 class="font-semibold">Attendance</h2>
+                </a>
+
+                <!-- Notes -->
+                <a href="viewNotes.html"
+                    class="bg-white shadow-lg rounded-xl p-6 text-center lg:w-60 hover:bg-blue-100">
+                    <i class="fa-solid fa-book text-3xl mb-2"></i>
+                    <h2 class="font-semibold">Notes</h2>
+                </a>
             </div>
-
-            <!-- Limited Fields -->
-            <p id="card-student-name" class="text-center text-gray-700 font-bold leading-loose">Loading...</p>
-            <p id="card-student-usn" class="text-center text-gray-600 text-sm"></p>
-            <p id="card-student-sem" class="text-center text-gray-600 text-sm leading-loose"></p>
-            <p id="card-student-section" class="text-center text-gray-600 text-sm"></p>
-        </div>
-        <!-- Recent Announcements -->
-        <div id="recent-announcements"
-            class="lg:m-20 bg-white shadow-xl rounded-xl w-100 p-7 cursor-pointer border border-gray-200">
-            <h3 class="text-lg font-bold text-gray-800 mb-2">📢 Recent Announcements</h3>
-            <ul id="recent-announcements-list" class="space-y-2 text-sm text-gray-700"></ul>
-            <p class="text-blue-600 text-xs mt-3 text-right">Click to view all →</p>
-        </div>
-    </div>
-
-    <!-- Main Section -->
-    <main class="flex-grow flex items-center justify-center">
-        <div class="grid grid-cols-3 gap-2 w-full max-w-4xl p-4 lg:gap-6">
-            <a href="studentMarks.html"
-                class="bg-white shadow-lg rounded-xl p-6 text-center hover:bg-blue-100 lg:w-60 lg:mr-3">
-                <i class="fa-solid fa-chart-simple text-3xl mb-2"></i>
-                <h2 class="font-semibold">Marks</h2>
-            </a>
-
-            <!-- Attendance -->
-            <a href="studentAttendance.html"
-                class="bg-white shadow-lg rounded-xl p-6 text-center hover:bg-blue-100 lg:w-60 lg:mr-3">
-                <i class="fa-solid fa-calendar-week text-3xl mb-2"></i>
-                <h2 class="font-semibold">Attendance</h2>
-            </a>
-
-            <!-- Notes -->
-            <a href="viewNotes.html" class="bg-white shadow-lg rounded-xl p-6 text-center lg:w-60 hover:bg-blue-100">
-                <i class="fa-solid fa-book text-3xl mb-2"></i>
-                <h2 class="font-semibold">Notes</h2>
-            </a>
-        </div>
-    </main>
+        </main>
+    </section>
     <!-- Contact Section -->
     <section id="contact" class="min-h-screen bg-pink-100 flex flex-col items-center justify-center px-6">
         <h2 class="text-3xl md:text-5xl font-bold leading-loose">Contact Us</h2>
