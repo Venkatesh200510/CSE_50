@@ -16,15 +16,18 @@ const BATCH_SIZE = 100;
 router.post("/", isAuth, upload.single("file"), async (req, res) => {
   try {
     const { title, message } = req.body;
-    const faculty_name = req.user?.name || "Faculty";
+
+    // faculty_id is a CHAR (can store name/username/id string)
+    const faculty_id = req.user?.name || "Faculty";
+
     const file_type = req.file?.mimetype || null;
     const file_data = req.file?.buffer || null;
 
     // Save announcement in DB
     await db.execute(
-      `INSERT INTO announcements (title, message, faculty_name, file_type, file_data, created_at)
+      `INSERT INTO announcements (title, message, faculty_id, file_type, file_data, created_at)
        VALUES (?, ?, ?, ?, ?, NOW())`,
-      [title, message, faculty_name, file_type, file_data]
+      [title, message, faculty_id, file_type, file_data]
     );
 
     // Fetch student emails
@@ -52,11 +55,13 @@ router.post("/", isAuth, upload.single("file"), async (req, res) => {
             },
             bcc: batch,
             subject: `📢 New Announcement: ${title}`,
-            text: `${message}\n\n- ${faculty_name}`,
+            text: `${message}\n\n- ${faculty_id}`, // ✅ use faculty_id as string
             attachments: file_data
               ? [
                   {
-                    filename: `${title}${file_type === "application/pdf" ? ".pdf" : ""}`,
+                    filename: `${title}${
+                      file_type === "application/pdf" ? ".pdf" : ""
+                    }`,
                     content: file_data.toString("base64"),
                     type: file_type || "application/octet-stream",
                     disposition: "attachment",
@@ -85,7 +90,7 @@ router.post("/", isAuth, upload.single("file"), async (req, res) => {
 router.get("/", isAuth, async (req, res) => {
   try {
     const [rows] = await db.execute(
-      `SELECT id, title, message, faculty_name, file_type, created_at
+      `SELECT id, title, message, faculty_id, file_type, created_at
        FROM announcements ORDER BY created_at DESC`
     );
 

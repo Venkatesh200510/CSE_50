@@ -18,6 +18,7 @@ const attendanceRoutes = require("./routes/attendance");
 const notesRoutes = require("./routes/notes");
 const announcementsRoutes = require("./routes/announcements");
 const authRoutes = require("./routes/auth");
+const adminRoutes = require("./routes/admin");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -37,30 +38,34 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static("src"));
 
-// Reuse db config for session store
 const sessionStore = new MySQLStore({
-  host: process.env.DB_HOST,
-  port: process.env.DB_PORT || 3306,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
+  host: '127.0.0.1',        // use 127.0.0.1 (avoids socket issues on Windows)
+  port: 3306,               // ✅ correct MySQL port
+  user: 'root',
+  password: '9035882709',
+  database: 'department',
   clearExpired: true,
-  checkExpirationInterval: 900000, // 15 mins
+  checkExpirationInterval: 900000,  // 15 mins
   expiration: 1000 * 60 * 60 * 24 * 7, // 7 days
 });
 
+
 app.use(
   session({
-    key: "connect.sid",                // cookie name
-    secret: process.env.SESSION_SECRET || "supersecret",
-    store: sessionStore,             // ✅ use MySQL instead of MemoryStore
+    key: "connect.sid",
+    secret: "supersecret",
+    store: sessionStore,
     resave: false,
     saveUninitialized: false,
-   cookie: { httpOnly: true, secure: false, // only secure in prod
-  sameSite: "lax", maxAge: 1000 * 60 * 60 * 24 * 7, 
- }
+    cookie: {
+      httpOnly: true,
+      secure: false,
+      sameSite: "lax",
+      maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+    },
   })
 );
+
 
 // Routes
 app.use("/api/marks", marksRoutes);
@@ -71,6 +76,7 @@ app.use("/api/attendance", attendanceRoutes);
 app.use("/api/notes", notesRoutes);
 app.use("/api/announcements", announcementsRoutes);
 app.use("/api", authRoutes);
+app.use("/api", adminRoutes);
 
 // Cache prevention
 app.use((req, res, next) => {
@@ -105,6 +111,131 @@ app.get("/student-home", isAuth, (req, res) =>
 app.get("/profile", (req, res) =>
   res.sendFile(path.join(__dirname, "src", "profile.html"))
 );
+
+// ================= ADMIN LOGIN =================
+app.post("/admin-login", async (req, res) => {
+  const { username, password } = req.body;
+  const adminUser = process.env.ADMIN_USER || "admin";
+  const adminPass = process.env.ADMIN_PASS || "admin123";
+
+  if (username === adminUser && password === adminPass) {
+    req.session.user = { role: "admin" };
+    return res.redirect("/admin-panel.html");
+  }
+  res.status(401).json({ message: "Invalid admin credentials" });
+});
+
+// Add Student
+// Add or Update Student
+app.post("/api/admin/student", async (req, res) => {
+  try {
+    const { usn, name, email, password, section, sem, phone, join_year } = req.body;
+
+    // Check if student already exists
+    const [existing] = await db.query(`SELECT * FROM student WHERE usn = ?`, [usn]);
+    if (existing.length > 0) {
+      return res.json({
+        message: "Student already exists",
+        existing: existing[0] // send current data to pre-fill form
+      });
+    }
+
+    // Insert new student
+    const hashed = await bcrypt.hash(password, 10);
+    await db.query(
+      `INSERT INTO student (usn, name, email, password, section, sem, phone, join_year)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [usn, name, email, hashed, section, sem, phone, join_year]
+    );
+    res.json({ message: "Student added successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error adding student" });
+  }
+});
+
+// Add or Update Faculty
+app.post("/api/admin/faculty", async (req, res) => {
+  try {
+    const { ssn_id, name, email, password, phone, position } = req.body;
+
+    // Check if faculty already exists
+    const [existing] = await db.query(`SELECT * FROM faculty WHERE ssn_id = ?`, [ssn_id]);
+    if (existing.length > 0) {
+      return res.json({
+        message: "Faculty already exists",
+        existing: existing[0] // send current data to pre-fill form
+      });
+    }
+
+    // Insert new faculty
+    const hashed = await bcrypt.hash(password, 10);
+    await db.query(
+      `INSERT INTO faculty (ssn_id, name, email, password, phone, position)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [ssn_id, name, email, hashed, phone, position]
+    );
+    res.json({ message: "Faculty added successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error adding faculty" });
+  }
+});
+
+
+// Delete Student/Faculty
+app.delete("/api/admin/:type/:id", async (req, res) => {
+  try {
+    const { type, id } = req.params;
+    if (!["student", "faculty"].includes(type)) return res.status(400).json({ error: "Invalid type" });
+
+    const idField = type === "student" ? "usn" : "ssn_id";
+    const [result] = await db.query(`DELETE FROM ${type} WHERE ${idField}=?`, [id]);
+
+    if (result.affectedRows === 0) return res.status(404).json({ error: `${type} not found` });
+
+    res.json({ message: `${type} deleted successfully` });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error deleting record" });
+  }
+});
+
+// Get student by USN
+// Get student by USN (without password)
+app.get("/api/admin/student/:usn", async (req, res) => {
+  try {
+    const [rows] = await db.query(
+      "SELECT usn, name, email, section, sem, phone, join_year FROM student WHERE usn = ?",
+      [req.params.usn]
+    );
+    if (!rows.length) return res.status(404).json({ message: "Student not found" });
+
+    res.json({ ...rows[0], isEdit: true }); // add isEdit flag
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error fetching student" });
+  }
+});
+
+// Get faculty by SSN (without password)
+app.get("/api/admin/faculty/:ssn", async (req, res) => {
+  try {
+    const [rows] = await db.query(
+      "SELECT ssn_id, name, email, phone, position FROM faculty WHERE ssn_id = ?",
+      [req.params.ssn]
+    );
+    if (!rows.length) return res.status(404).json({ message: "Faculty not found" });
+
+    res.json({ ...rows[0], isEdit: true }); // add isEdit flag
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error fetching faculty" });
+  }
+});
+
+
+
 
 // Initial DB population
 (async () => {

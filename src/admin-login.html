@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Admin Panel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100 p-8">
+    <h1 class="text-4xl font-bold mb-6 text-center">⚙️ Admin Panel</h1>
+
+    <!-- Search & Open Modals -->
+    <div class="grid grid-cols-2 gap-6 max-w-3xl mx-auto mb-10">
+        <!-- Student Search -->
+        <div class="flex gap-3">
+            <input id="studentSearch" type="text" placeholder="Enter USN" class="border p-2 flex-1 rounded-lg" />
+            <button id="openStudentModalBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
+                Edit / Add Student
+            </button>
+        </div>
+
+        <!-- Faculty Search -->
+        <div class="flex gap-3">
+            <input id="facultySearch" type="text" placeholder="Enter SSN" class="border p-2 flex-1 rounded-lg" />
+            <button id="openFacultyModalBtn" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg">
+                Edit / Add Faculty
+            </button>
+        </div>
+    </div>
+
+    <!-- Delete Section -->
+    <div class="mt-6 bg-white shadow-lg rounded-2xl p-6 max-w-lg mx-auto">
+        <h2 class="text-2xl font-semibold mb-4">🗑️ Delete Record</h2>
+        <form id="deleteForm" class="flex gap-3">
+            <select id="deleteType" class="border p-2">
+                <option value="student">Student</option>
+                <option value="faculty">Faculty</option>
+            </select>
+            <input id="deleteId" placeholder="Enter USN or SSN" class="border p-2 flex-1" />
+            <button class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg">Delete</button>
+        </form>
+    </div>
+
+    <!-- Student Modal -->
+    <div id="studentModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
+        <div class="bg-white p-8 rounded-2xl shadow-xl w-96 relative">
+            <button id="closeStudentModal" class="absolute top-3 right-3 text-gray-500 hover:text-gray-800">✖</button>
+            <h2 class="text-2xl font-semibold mb-4">Add / Update Student</h2>
+            <form id="studentForm" class="space-y-3">
+                <input name="usn" placeholder="USN" class="border p-2 w-full" required />
+                <input name="name" placeholder="Name" class="border p-2 w-full" required />
+                <input name="email" type="email" placeholder="Email" class="border p-2 w-full" required />
+                <input id="studentPassword" name="password" type="password" placeholder="Password"
+                    class="border p-2 w-full" required />
+                <input name="section" placeholder="Section" class="border p-2 w-full" />
+                <input name="sem" placeholder="Semester" class="border p-2 w-full" />
+                <input name="phone" placeholder="Phone" class="border p-2 w-full" />
+                <input name="join_year" placeholder="Join Year" class="border p-2 w-full" />
+                <button class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg w-full">Save
+                    Student</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Faculty Modal -->
+    <div id="facultyModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
+        <div class="bg-white p-8 rounded-2xl shadow-xl w-96 relative">
+            <button id="closeFacultyModal" class="absolute top-3 right-3 text-gray-500 hover:text-gray-800">✖</button>
+            <h2 class="text-2xl font-semibold mb-4">Add / Update Faculty</h2>
+            <form id="facultyForm" class="space-y-3">
+                <input name="ssn_id" placeholder="SSN ID" class="border p-2 w-full" required />
+                <input name="name" placeholder="Name" class="border p-2 w-full" required />
+                <input name="email" type="email" placeholder="Email" class="border p-2 w-full" required />
+                <input id="facultyPassword" name="password" type="password" placeholder="Password"
+                    class="border p-2 w-full" required />
+                <input name="phone" placeholder="Phone" class="border p-2 w-full" />
+                <input name="position" placeholder="Position" class="border p-2 w-full" />
+                <button class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg w-full">Save
+                    Faculty</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const studentModal = document.getElementById("studentModal");
+        const facultyModal = document.getElementById("facultyModal");
+        const studentPassword = document.getElementById("studentPassword");
+        const facultyPassword = document.getElementById("facultyPassword");
+
+        document.getElementById("closeStudentModal").onclick = () => studentModal.classList.add("hidden");
+        document.getElementById("closeFacultyModal").onclick = () => facultyModal.classList.add("hidden");
+
+        async function postData(url, data) {
+            const res = await fetch(url, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data)
+            });
+            return res.json();
+        }
+
+        // Open Student Modal
+        document.getElementById("openStudentModalBtn").onclick = async () => {
+            const usn = document.getElementById("studentSearch").value.trim();
+            const f = document.getElementById("studentForm");
+
+            if (usn) {
+                try {
+                    const res = await fetch(`/api/admin/student/${usn}`);
+                    if (!res.ok) throw new Error("Student not found");
+                    const data = await res.json();
+                    f.usn.value = data.usn;
+                    f.name.value = data.name;
+                    f.email.value = data.email;
+                    f.section.value = data.section;
+                    f.sem.value = data.sem;
+                    f.phone.value = data.phone;
+                    f.join_year.value = data.join_year;
+
+                    studentPassword.value = "";
+                    studentPassword.disabled = true;
+                    studentPassword.placeholder = "Password cannot be changed here";
+                } catch {
+                    alert("Student not found. You can add a new one.");
+                    f.reset();
+                    studentPassword.disabled = false;
+                    studentPassword.placeholder = "Password";
+                }
+            } else {
+                f.reset();
+                studentPassword.disabled = false;
+                studentPassword.placeholder = "Password";
+            }
+            studentModal.classList.remove("hidden");
+        };
+
+        // Open Faculty Modal
+        document.getElementById("openFacultyModalBtn").onclick = async () => {
+            const ssn = document.getElementById("facultySearch").value.trim();
+            const f = document.getElementById("facultyForm");
+
+            if (ssn) {
+                try {
+                    const res = await fetch(`/api/admin/faculty/${ssn}`);
+                    if (!res.ok) throw new Error("Faculty not found");
+                    const data = await res.json();
+                    f.ssn_id.value = data.ssn_id;
+                    f.name.value = data.name;
+                    f.email.value = data.email;
+                    f.phone.value = data.phone;
+                    f.position.value = data.position;
+
+                    facultyPassword.value = "";
+                    facultyPassword.disabled = true;
+                    facultyPassword.placeholder = "Password cannot be changed here";
+                } catch {
+                    alert("Faculty not found. You can add a new one.");
+                    f.reset();
+                    facultyPassword.disabled = false;
+                    facultyPassword.placeholder = "Password";
+                }
+            } else {
+                f.reset();
+                facultyPassword.disabled = false;
+                facultyPassword.placeholder = "Password";
+            }
+            facultyModal.classList.remove("hidden");
+        };
+
+        // Submit Student
+        document.getElementById("studentForm").onsubmit = async (e) => {
+            e.preventDefault();
+            const formData = Object.fromEntries(new FormData(e.target).entries());
+            delete formData.password; // do not update password
+            const res = await postData("/api/admin/student", formData);
+            alert(res.message || res.error);
+            if (res.message) location.reload();
+        };
+
+        // Submit Faculty
+        document.getElementById("facultyForm").onsubmit = async (e) => {
+            e.preventDefault();
+            const formData = Object.fromEntries(new FormData(e.target).entries());
+            delete formData.password; // do not update password
+            const res = await postData("/api/admin/faculty", formData);
+            alert(res.message || res.error);
+            if (res.message) location.reload();
+        };
+
+        // Delete
+        document.getElementById("deleteForm").onsubmit = async (e) => {
+            e.preventDefault();
+            const type = document.getElementById("deleteType").value;
+            const id = document.getElementById("deleteId").value.trim();
+            const res = await fetch(`/api/admin/${type}/${id}`, { method: "DELETE" });
+            const data = await res.json();
+            alert(data.message || data.error);
+            if (data.message) location.reload();
+        };
+    </script>
+</body>
+
+</html>
