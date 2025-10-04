@@ -6,6 +6,7 @@ const bcrypt = require("bcrypt");
 const fs = require("fs");
 const cors = require("cors");
 const db = require("./db");
+const multer = require("multer");
 const bodyParser = require("body-parser");
 const { transporter } = require("./mailer"); // adjust path if needed
 
@@ -19,6 +20,7 @@ const notesRoutes = require("./routes/notes");
 const announcementsRoutes = require("./routes/announcements");
 const authRoutes = require("./routes/auth");
 const adminRoutes = require("./routes/admin");
+const storage = multer.memoryStorage();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -49,6 +51,15 @@ const sessionStore = new MySQLStore({
   expiration: 1000 * 60 * 60 * 24 * 7, // 7 days
 });
 
+const upload = multer({ 
+  storage,
+  fileFilter: function (req, file, cb) {
+    if (file.mimetype !== "application/pdf") {
+      return cb(new Error("Only PDF files are allowed"));
+    }
+    cb(null, true);
+  }
+});
 
 app.use(
   session({
@@ -234,6 +245,69 @@ app.get("/api/admin/faculty/:ssn", async (req, res) => {
   }
 });
 
+app.post("/api/timetable/upload", isAuth, upload.single("timetable"), async (req, res) => {
+  try {
+    if (req.session.user.role !== "faculty") {
+      return res.status(403).json({ error: "Only faculty can upload timetables" });
+    }
+
+    const { semester, section } = req.body;
+    if (!semester || !section || !req.file) {
+      return res.status(400).json({ error: "Semester, Section and PDF file are required" });
+    }
+
+    // Insert into DB
+    await db.execute(
+      "INSERT INTO timetables (semester, section, file_name, file_data) VALUES (?, ?, ?, ?)",
+      [semester, section, req.file.originalname, req.file.buffer]
+    );
+
+    res.json({ message: "Timetable uploaded successfully!" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// Get timetable PDF for a student's semester & section
+// Get timetable PDF for a student's semester & section
+app.get("/api/timetable/me", isAuth, async (req, res) => {
+  try {
+    if (req.session.user.role !== "student") {
+      return res.status(403).send("Only students can access this");
+    }
+
+    // Get student info
+    const [studentRows] = await db.execute(
+      "SELECT sem, section FROM student WHERE usn = ?",
+      [req.session.user.usn]
+    );
+
+    if (!studentRows.length) return res.status(404).send("Student not found");
+    const { sem, section } = studentRows[0];
+
+    // Get timetable
+    const [rows] = await db.execute(
+      "SELECT file_name, file_data FROM timetables WHERE semester=? AND section=? ORDER BY uploaded_at DESC LIMIT 1",
+      [sem, section]
+    );
+
+    if (!rows.length) {
+      return res
+        .status(404)
+        .send("<h2 style='text-align:center;margin-top:50px;color:red;'>Timetable not uploaded yet</h2>");
+    }
+
+    const timetable = rows[0];
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `inline; filename="${timetable.file_name}"`);
+    res.send(timetable.file_data);
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Server error");
+  }
+});
 
 
 

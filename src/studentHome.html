@@ -16,63 +16,63 @@
         <h1 class="text-3xl font-bold">Department Academic Management System</h1>
     </header>
 
-    <!-- Profile Modal (Full Details) -->
+    <!-- Profile Modal -->
     <section class="flex-grow">
         <div id="student-profile-card" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
             <div class="bg-white rounded-lg w-96 p-6 relative shadow-lg">
-                <!-- Close Button -->
                 <button id="closeStudentProfile"
-                    class="absolute top-3 right-3 text-white w-6 h-6 rounded-full pb-1 bg-red-600 flex items-center justify-center">
-                    x
-                </button>
-
-                <!-- Profile Info -->
+                    class="absolute top-3 right-3 text-white w-6 h-6 rounded-full pb-1 bg-red-600 flex items-center justify-center">x</button>
                 <div class="text-center space-y-2">
                     <div id="student-avatar"
                         class="w-14 h-14 mx-auto rounded-full bg-gray-800 flex items-center justify-center text-white text-xl font-bold">
-                        ?
-                    </div>
+                        ?</div>
                     <h2 class="text-2xl font-bold text-gray-600" id="student-name">Loading...</h2>
                     <p id="student-usn" class="text-gray-600"></p>
                     <p id="student-section" class="text-gray-600"></p>
                     <p id="student-sem" class="text-gray-600"></p>
                     <p id="student-phone" class="text-gray-600"></p>
                     <p id="student-email" class="text-gray-600"></p>
-
-                    <!-- Buttons -->
                     <div class="mt-5 space-y-3">
                         <button id="studentChangePass"
-                            class="bg-blue-500 text-white px-4 py-2 rounded w-40 hover:bg-blue-600">
-                            Change Password
-                        </button>
+                            class="bg-blue-500 text-white px-4 py-2 rounded w-40 hover:bg-blue-600">Change
+                            Password</button>
                         <form action="/logout" method="POST">
-                            <button type="submit" class="bg-red-500 text-white px-4 py-2 rounded w-40 hover:bg-red-600">
-                                Logout
-                            </button>
+                            <button type="submit"
+                                class="bg-red-500 text-white px-4 py-2 rounded w-40 hover:bg-red-600">Logout</button>
                         </form>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Profile Card (Quick Info) -->
+        <!-- Quick Profile & Timetable & Announcements -->
         <div class="flex flex-col justify-between lg:flex-row items-center shadow-md m-5 lg:m-0">
+
+            <!-- Quick Profile Card -->
             <div id="openProfile"
                 class="lg:m-20 lg:w-80 w-70 lg:p-6 p-6 mb-10 bg-white shadow-xl rounded-xl cursor-pointer border border-gray-200 lg:ml-20 lg:text-2xl">
                 <h3 class="text-xl font-bold text-gray-800 mb-4 text-center">Student Profile</h3>
-
-                <!-- Avatar -->
                 <div id="student-initials"
                     class="w-14 h-14 mx-auto rounded-full bg-gray-800 flex items-center justify-center text-white text-xl font-bold mb-3">
-                    ?
-                </div>
-
-                <!-- Limited Fields -->
+                    ?</div>
                 <p id="card-student-name" class="text-center text-gray-700 font-bold leading-loose">Loading...</p>
                 <p id="card-student-usn" class="text-center text-gray-600 text-sm"></p>
                 <p id="card-student-sem" class="text-center text-gray-600 text-sm leading-loose"></p>
                 <p id="card-student-section" class="text-center text-gray-600 text-sm"></p>
             </div>
+
+            <!-- Timetable Card (similar to profile card) -->
+            <div id="timetableCard"
+                class="lg:m-20 lg:w-80 w-70 lg:p-6 p-6 mb-10 bg-white shadow-xl rounded-xl cursor-pointer border border-gray-200 lg:text-2xl">
+                <h3 class="text-xl font-bold text-gray-800 mb-4 text-center">🗓️ Timetable</h3>
+
+                <!-- PDF preview / message -->
+                <div id="timetablePreview"
+                    class="w-full h-64 rounded-lg overflow-hidden border border-gray-300 flex items-center justify-center bg-gray-50">
+                    <span id="timetableMessage" class="text-gray-500">Loading timetable...</span>
+                </div>
+            </div>
+
             <!-- Recent Announcements -->
             <div id="recent-announcements"
                 class="lg:m-20 bg-white shadow-xl rounded-xl w-100 p-7 cursor-pointer border border-gray-200 ml-5">
@@ -82,7 +82,7 @@
             </div>
         </div>
 
-        <!-- Main Section -->
+        <!-- Main Section Cards -->
         <main class="flex-grow flex items-center justify-center mt-7">
             <div class="grid grid-cols-3 gap-2 w-full max-w-4xl p-4 lg:gap-6">
                 <a href="studentMarks.html"
@@ -90,15 +90,11 @@
                     <i class="fa-solid fa-chart-simple text-3xl mb-2"></i>
                     <h2 class="font-semibold">Marks</h2>
                 </a>
-
-                <!-- Attendance -->
                 <a href="studentAttendance.html"
                     class="bg-white shadow-lg rounded-xl p-6 text-center hover:bg-blue-100 lg:w-60 lg:mr-3">
                     <i class="fa-solid fa-calendar-week text-3xl mb-2"></i>
                     <h2 class="font-semibold">Attendance</h2>
                 </a>
-
-                <!-- Notes -->
                 <a href="viewNotes.html"
                     class="bg-white shadow-lg rounded-xl p-6 text-center lg:w-60 hover:bg-blue-100">
                     <i class="fa-solid fa-book text-3xl mb-2"></i>
@@ -107,6 +103,7 @@
             </div>
         </main>
     </section>
+
     <!-- Contact Section -->
     <section id="contact" class="min-h-screen bg-pink-100 flex flex-col items-center justify-center px-6">
         <h2 class="text-3xl md:text-5xl font-bold leading-loose">Contact Us</h2>
@@ -136,134 +133,97 @@
         </div>
     </footer>
 
+    <!-- Scripts -->
     <script>
-        if (performance.navigation.type === 2) {
-            location.reload(true);
-        }
-
+        // Profile & announcements
         document.addEventListener("DOMContentLoaded", () => {
-            fetch("/api/profile")
-                .then(res => res.json())
-                .then(data => {
-                    if (data.error) {
-                        alert(data.error);
-                        return;
-                    }
-
-                    // Fill Modal
-                    document.getElementById("student-name").textContent = data.name;
-                    document.getElementById("student-usn").textContent = `USN: ${data.usn}`;
-                    document.getElementById("student-section").textContent = `Section: ${data.section}`;
-                    document.getElementById("student-sem").textContent = `Semester: ${data.sem}`;
-                    document.getElementById("student-phone").textContent = `Phone: ${data.phone}`;
-                    document.getElementById("student-email").textContent = `Email: ${data.email}`;
-
-                    // Fill Card
-                    document.getElementById("card-student-name").textContent = data.name;
-                    document.getElementById("card-student-usn").textContent = `USN: ${data.usn}`;
-                    document.getElementById("card-student-section").textContent = `Section: ${data.section}`;
-                    document.getElementById("card-student-sem").textContent = `Semester: ${data.sem}`;
-
-                    // Initials
-                    const initials = data.name
-                        .split(" ")
-                        .map(word => word[0]?.toUpperCase())
-                        .slice(0, 2)
-                        .join("");
-                    document.getElementById("student-avatar").textContent = initials || "?";
-                    document.getElementById("student-initials").textContent = initials || "?";
-                })
-                .catch(err => console.error("Error loading student profile:", err));
-
-            // Modal handling
-            document.getElementById("openProfile").addEventListener("click", () => {
-                document.getElementById("student-profile-card").classList.remove("hidden");
-            });
-            document.getElementById("closeStudentProfile").addEventListener("click", () => {
-                document.getElementById("student-profile-card").classList.add("hidden");
-            });
-            window.addEventListener("click", (e) => {
-                const modal = document.getElementById("student-profile-card");
-                if (e.target === modal) modal.classList.add("hidden");
-            });
-
-            // Change Password
-            document.getElementById("studentChangePass").addEventListener("click", () => {
-                window.location.href = "changepass.html";
-            });
-
+            loadProfile();
             loadRecentAnnouncements();
+            loadTimetable();
         });
 
-        async function sendMessage() {
-            const email = document.getElementById('email').value;
-            const message = document.getElementById('message').value;
-            const button = document.querySelector('button[onclick="sendMessage()"]');
-            const loader = document.getElementById('loading');
+        function loadProfile() {
+            fetch("/api/profile").then(res => res.json()).then(data => {
+                if (data.error) return alert(data.error);
+                document.getElementById("student-name").textContent = data.name;
+                document.getElementById("student-usn").textContent = `USN: ${data.usn}`;
+                document.getElementById("student-section").textContent = `Section: ${data.section}`;
+                document.getElementById("student-sem").textContent = `Semester: ${data.sem}`;
+                document.getElementById("student-phone").textContent = `Phone: ${data.phone}`;
+                document.getElementById("student-email").textContent = `Email: ${data.email}`;
+                document.getElementById("card-student-name").textContent = data.name;
+                document.getElementById("card-student-usn").textContent = `USN: ${data.usn}`;
+                document.getElementById("card-student-section").textContent = `Section: ${data.section}`;
+                document.getElementById("card-student-sem").textContent = `Semester: ${data.sem}`;
+                const initials = data.name.split(" ").map(w => w[0]?.toUpperCase()).slice(0, 2).join("");
+                document.getElementById("student-avatar").textContent = initials || "?";
+                document.getElementById("student-initials").textContent = initials || "?";
+            }).catch(err => console.error(err));
 
-            loader.classList.remove('hidden');
-            button.disabled = true;
-
-            try {
-                const res = await fetch("/contact", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ email, message }),
-                });
-
-                const data = await res.json();
-
-                if (data.success) {
-                    alert("Message sent!");
-                    document.getElementById('email').value = '';
-                    document.getElementById('message').value = '';
-                } else {
-                    alert(data.error);
-                }
-            } catch (err) {
-                alert("Error sending message. Try again later.");
-                console.error(err);
-            } finally {
-                loader.classList.add('hidden');
-                button.disabled = false;
-            }
+            // Profile modal
+            document.getElementById("openProfile").addEventListener("click", () => document.getElementById("student-profile-card").classList.remove("hidden"));
+            document.getElementById("closeStudentProfile").addEventListener("click", () => document.getElementById("student-profile-card").classList.add("hidden"));
+            window.addEventListener("click", e => { if (e.target === document.getElementById("student-profile-card")) document.getElementById("student-profile-card").classList.add("hidden"); });
+            document.getElementById("studentChangePass").addEventListener("click", () => window.location.href = "changepass.html");
         }
 
         async function loadRecentAnnouncements() {
             try {
                 const res = await fetch("/api/announcements");
                 const announcements = await res.json();
-
                 const list = document.getElementById("recent-announcements-list");
                 list.innerHTML = "";
-
                 const recent = announcements.slice(0, 5);
+                if (recent.length === 0) list.innerHTML = "<li class='text-gray-500'>No announcements yet.</li>";
+                else recent.forEach(a => { const li = document.createElement("li"); li.className = "truncate"; li.innerHTML = `<span class="font-semibold">${a.title}</span> - <span class="text-gray-600">${a.message?.slice(0, 40) || ""}...</span>`; list.appendChild(li); });
+                document.getElementById("recent-announcements").addEventListener("click", () => window.location.href = "announcements.html");
+            } catch (err) { console.error(err); }
+        }
 
-                if (recent.length === 0) {
-                    list.innerHTML = `<li class="text-gray-500">No announcements yet.</li>`;
+        async function sendMessage() {
+            const email = document.getElementById('email').value;
+            const message = document.getElementById('message').value;
+            const button = document.querySelector('button[onclick="sendMessage()"]');
+            const loader = document.getElementById('loading');
+            loader.classList.remove('hidden'); button.disabled = true;
+            try {
+                const res = await fetch("/contact", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, message }) });
+                const data = await res.json();
+                if (data.success) { alert("Message sent!"); document.getElementById('email').value = ''; document.getElementById('message').value = ''; }
+                else alert(data.error);
+            } catch (err) { alert("Error sending message."); console.error(err); }
+            finally { loader.classList.add('hidden'); button.disabled = false; }
+        }
+
+        async function loadTimetable() {
+            const preview = document.getElementById("timetablePreview");
+            const message = document.getElementById("timetableMessage");
+
+            try {
+                const res = await fetch(`/api/timetable/me?${Date.now()}`);
+
+                if (!res.ok) {
+                    message.textContent = "Timetable not uploaded yet";
+                    message.classList.add("text-red-500", "font-bold");
                     return;
                 }
 
-                recent.forEach(a => {
-                    const li = document.createElement("li");
-                    li.className = "truncate";
-                    li.innerHTML = `<span class="font-semibold">${a.title}</span> - 
-            <span class="text-gray-600">${a.message?.slice(0, 40) || ""}...</span>`;
-                    list.appendChild(li);
-                });
+                // PDF exists
+                const blob = await res.blob();
+                const url = URL.createObjectURL(blob);
 
-                document.getElementById("recent-announcements").addEventListener("click", () => {
-                    window.location.href = "announcements.html";
-                });
-
+                // Embed iframe in preview
+                preview.innerHTML = `<iframe src="${url}" class="w-full h-full" frameborder="0"></iframe>`;
             } catch (err) {
-                console.error("Error fetching recent announcements:", err);
+                console.error("Error loading timetable:", err);
+                message.textContent = "Failed to load timetable";
+                message.classList.add("text-red-500", "font-bold");
             }
         }
 
-        function goHome() {
-            window.location.href = "home.html";
-        }
+        // Load timetable after DOM is ready
+        document.addEventListener("DOMContentLoaded", loadTimetable);
+
     </script>
 </body>
 
