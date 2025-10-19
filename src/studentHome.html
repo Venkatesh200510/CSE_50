@@ -12,8 +12,8 @@
 <body class="bg-gray-200 min-h-screen flex flex-col">
 
     <!-- Header -->
-    <header class="bg-gray-800 text-white p-7 text-center shadow-md">
-        <h1 class="text-3xl font-bold">Department Academic Management System</h1>
+    <header class="bg-gray-800 text-white p-7  shadow-md">
+        <h1 class="text-3xl font-bold">CSE Department</h1>
     </header>
 
     <!-- Profile Modal -->
@@ -83,25 +83,48 @@
         </div>
 
         <!-- Main Section Cards -->
-        <main class="flex-grow flex items-center justify-center mt-7">
-            <div class="grid grid-cols-3 gap-2 w-full max-w-4xl p-4 lg:gap-6">
-                <a href="studentMarks.html"
-                    class="bg-white shadow-lg rounded-xl p-6 text-center hover:bg-blue-100 lg:w-60 lg:mr-3">
-                    <i class="fa-solid fa-chart-simple text-3xl mb-2"></i>
-                    <h2 class="font-semibold">Marks</h2>
+        <main class="flex-grow flex items-center justify-center mt-10 px-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-5xl">
+
+                <!-- Marks Card -->
+                <a href="studentMarks.html" class="group bg-white rounded-2xl shadow-md hover:shadow-xl p-8 transition-all duration-300 
+              cursor-pointer hover:-translate-y-2 flex flex-col items-center justify-center">
+                    <div class="bg-yellow-100 text-yellow-500 rounded-full p-5 mb-5 
+                  group-hover:scale-110 transition-transform duration-300">
+                        <i class="fas fa-clipboard-list text-3xl"></i>
+                    </div>
+                    <span class="text-lg font-semibold text-gray-800 group-hover:text-yellow-600">
+                        Marks
+                    </span>
                 </a>
-                <a href="studentAttendance.html"
-                    class="bg-white shadow-lg rounded-xl p-6 text-center hover:bg-blue-100 lg:w-60 lg:mr-3">
-                    <i class="fa-solid fa-calendar-week text-3xl mb-2"></i>
-                    <h2 class="font-semibold">Attendance</h2>
+
+                <!-- Attendance Card -->
+                <a href="studentAttendance.html" class="group bg-white rounded-2xl shadow-md hover:shadow-xl p-8 transition-all duration-300 
+              cursor-pointer hover:-translate-y-2 flex flex-col items-center justify-center">
+                    <div class="bg-green-100 text-green-600 rounded-full p-5 mb-5 
+                  group-hover:scale-110 transition-transform duration-300">
+                        <i class="fas fa-user-check text-3xl"></i>
+                    </div>
+                    <span class="text-lg font-semibold text-gray-800 group-hover:text-green-600">
+                        Attendance
+                    </span>
                 </a>
-                <a href="viewNotes.html"
-                    class="bg-white shadow-lg rounded-xl p-6 text-center lg:w-60 hover:bg-blue-100">
-                    <i class="fa-solid fa-book text-3xl mb-2"></i>
-                    <h2 class="font-semibold">Notes</h2>
+
+                <!-- Notes Card -->
+                <a href="viewNotes.html" class="group bg-white rounded-2xl shadow-md hover:shadow-xl p-8 transition-all duration-300 
+              cursor-pointer hover:-translate-y-2 flex flex-col items-center justify-center">
+                    <div class="bg-blue-100 text-blue-600 rounded-full p-5 mb-5 
+                  group-hover:scale-110 transition-transform duration-300">
+                        <i class="fas fa-sticky-note text-3xl"></i>
+                    </div>
+                    <span class="text-lg font-semibold text-gray-800 group-hover:text-blue-600">
+                        Notes
+                    </span>
                 </a>
+
             </div>
         </main>
+
     </section>
 
     <!-- Contact Section -->

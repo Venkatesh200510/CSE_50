@@ -88,7 +88,6 @@ app.use("/api/notes", notesRoutes);
 app.use("/api/announcements", announcementsRoutes);
 app.use("/api", authRoutes);
 app.use("/api", adminRoutes);
-
 // Cache prevention
 app.use((req, res, next) => {
   res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, private");
@@ -109,6 +108,17 @@ function isAuth(req, res, next) {
   res.redirect("/");
 }
 
+const photoUpload = multer({
+  storage: multer.memoryStorage(),
+  fileFilter: (req, file, cb) => {
+    if (!file.mimetype.startsWith("image/")) {
+      return cb(new Error("Only image files are allowed"));
+    }
+    cb(null, true);
+  }
+});
+
+
 // Static pages
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "src", "home.html"));
@@ -117,7 +127,7 @@ app.get("/faculty-home", isAuth, (req, res) =>
   res.sendFile(path.join(__dirname, "src", "facultyHome.html"))
 );
 app.get("/student-home", isAuth, (req, res) =>
-  res.sendFile(path.join(__dirname, "src", "studentHome.html"))
+  res.sendFile(path.join(__dirname, "src", "sHome.html"))
 );
 app.get("/profile", (req, res) =>
   res.sendFile(path.join(__dirname, "src", "profile.html"))
@@ -348,16 +358,50 @@ app.get("/api/profile", isAuth, async (req, res) => {
     const table = role === "student" ? "student" : "faculty";
     const idField = role === "student" ? "usn" : "ssn_id";
 
-    const [rows] = await db.query(`SELECT * FROM ${table} WHERE ${idField}=?`, [
-      id,
-    ]);
+    const [rows] = await db.query(`SELECT * FROM ${table} WHERE ${idField}=?`, [id]);
     if (!rows.length) return res.status(404).json({ error: "User not found" });
 
-    res.json({ role, ...rows[0] });
-  } catch {
+    const user = rows[0];
+    let photoUrl = null;
+
+    if (user.photo_data) {
+      const buffer = Buffer.isBuffer(user.photo_data)
+        ? user.photo_data
+        : Buffer.from(user.photo_data, "binary");
+
+      photoUrl = `data:${user.photo_type};base64,${buffer.toString("base64")}`;
+    }
+
+    res.json({ role, ...user, photoUrl });
+  } catch (err) {
+    console.error(err);
     res.status(500).json({ error: "Database error" });
   }
 });
+
+
+app.post("/api/profile-photo", isAuth, photoUpload.single("photo"), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: "No file uploaded" });
+
+    const role = req.session.user?.role;
+    const table = role === "student" ? "student" : "faculty";
+    const idField = role === "student" ? "usn" : "ssn_id";
+    const id = role === "student" ? req.session.user?.usn : req.session.user?.ssn_id;
+
+    await db.query(
+      `UPDATE ${table} SET photo_data=?, photo_type=? WHERE ${idField}=?`,
+      [req.file.buffer, req.file.mimetype, id]
+    );
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Profile photo upload error:", err);
+    res.status(500).json({ error: "Error uploading photo" });
+  }
+});
+
+
 
 // Attendance alert route
 app.post("/api/attendance/alert", async (req, res) => {

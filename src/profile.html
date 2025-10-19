@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Student Profile</title>
+    <link href="./output.css" rel="stylesheet">
+</head>
+
+<body class="bg-pink-50 min-h-screen flex flex-col items-center justify-center p-6">
+
+    <!-- Profile Section -->
+    <section id="profile" class="bg-white rounded-xl shadow-lg p-8 w-full max-w-lg text-center space-y-4">
+        <div id="student-avatar"
+            class="w-24 h-24 mx-auto rounded-full bg-gray-800 flex items-center justify-center text-white text-3xl font-bold overflow-hidden">
+            ?
+        </div>
+        <input type="file" id="profilePhotoInput" accept="image/*" class="hidden" onchange="uploadProfilePhoto(event)">
+        <button onclick="document.getElementById('profilePhotoInput').click()"
+            class="mt-2 bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-800">Upload Photo</button>
+
+        <h2 class="text-2xl font-bold text-gray-700" id="student-name">Loading...</h2>
+        <p id="student-usn" class="text-gray-600"></p>
+        <p id="student-section" class="text-gray-600"></p>
+        <p id="student-sem" class="text-gray-600"></p>
+        <p id="student-phone" class="text-gray-600"></p>
+        <p id="student-email" class="text-gray-600"></p>
+
+        <div class="mt-5 space-y-3">
+            <button id="studentChangePass"
+                class="bg-blue-500 text-white px-4 py-2 rounded w-40 hover:bg-blue-600">Change Password</button>
+            <form action="/logout" method="POST">
+                <button type="submit"
+                    class="bg-red-500 text-white px-4 py-2 rounded w-40 hover:bg-red-600">Logout</button>
+            </form>
+        </div>
+    </section>
+
+    <!-- Contact Us Section -->
+    <section id="contact" class="bg-pink-100 mt-10 rounded-xl shadow-md p-8 w-full max-w-lg text-center">
+        <h2 class="text-3xl font-bold leading-loose">Contact Us</h2>
+        <input id="email" type="text" placeholder="Enter your email"
+            class="mt-4 p-3 w-full border border-gray-300 rounded">
+        <textarea id="message" placeholder="Your message"
+            class="mt-4 p-3 border border-gray-300 rounded w-full h-32"></textarea>
+        <button type="button" onclick="sendMessage()"
+            class="mt-4 bg-blue-500 text-white px-6 py-3 rounded hover:bg-blue-600">Send Message</button>
+        <div id="loading" class="w-12 h-12 mt-4 hidden mx-auto">
+            <img src="./images/spinner.svg" alt="Loading..." class="w-full h-full">
+        </div>
+    </section>
+
+    <script>
+        // --- Load Profile Data ---
+        async function loadProfile() {
+            try {
+                const res = await fetch("/api/profile");
+                const data = await res.json();
+                if (data.error) return alert(data.error);
+
+                document.getElementById("student-name").textContent = data.name;
+                document.getElementById("student-usn").textContent = `USN: ${data.usn}`;
+                document.getElementById("student-section").textContent = `Section: ${data.section}`;
+                document.getElementById("student-sem").textContent = `Semester: ${data.sem}`;
+                document.getElementById("student-phone").textContent = `Phone: ${data.phone}`;
+                document.getElementById("student-email").textContent = `Email: ${data.email}`;
+
+                const initials = data.name.split(" ").map(w => w[0]?.toUpperCase()).slice(0, 2).join("");
+                const avatar = document.getElementById("student-avatar");
+
+                if (data.photoUrl) {
+                    avatar.innerHTML = `<img src="${data.photoUrl}" alt="Profile Photo" class="w-full h-full object-cover rounded-full">`;
+                } else {
+                    avatar.textContent = initials || "?";
+                }
+
+                document.getElementById("studentChangePass").addEventListener("click", () => {
+                    window.location.href = "changepass.html";
+                });
+
+            } catch (err) {
+                console.error(err);
+                alert("Failed to load profile");
+            }
+        }
+
+        // --- Upload Profile Photo ---
+        async function uploadProfilePhoto(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append("photo", file);
+
+            try {
+                const res = await fetch("/api/profile-photo", { method: "POST", body: formData });
+                const data = await res.json();
+
+                if (data.success) {
+                    alert("Profile photo updated!");
+                    loadProfile(); // reload profile to show new photo
+                } else {
+                    alert(data.error || "Upload failed");
+                }
+            } catch (err) {
+                console.error(err);
+                alert("Error uploading photo");
+            }
+        }
+
+        // --- Contact Message ---
+        async function sendMessage() {
+            const email = document.getElementById('email').value;
+            const message = document.getElementById('message').value;
+            const loader = document.getElementById('loading');
+            loader.classList.remove('hidden');
+
+            try {
+                const res = await fetch("/contact", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ email, message })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    alert("Message sent!");
+                    document.getElementById('email').value = '';
+                    document.getElementById('message').value = '';
+                } else alert(data.error);
+            } catch (err) {
+                console.error(err);
+                alert("Error sending message.");
+            } finally {
+                loader.classList.add('hidden');
+            }
+        }
+
+        // Initialize
+        loadProfile();
+    </script>
+</body>
+
+</html>

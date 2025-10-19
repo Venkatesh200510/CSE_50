@@ -19,5 +19,7 @@ dist/*.map
 src/input.css
 
 student.json
+deployDB.sql
+subjects.sql
 
 .vscode

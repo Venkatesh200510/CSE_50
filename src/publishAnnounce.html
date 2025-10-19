@@ -28,13 +28,27 @@
         </h1>
 
         <!-- Form -->
-        <form id="announcementForm" class="space-y-6">
+        <form id="announcementForm" class="space-y-6" enctype="multipart/form-data">
 
             <!-- Faculty ID -->
             <div>
                 <label for="faculty_id" class="block text-gray-700 font-semibold mb-2">Faculty ID</label>
                 <input type="text" id="faculty_id" name="faculty_id" required
                     class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
+            </div>
+
+            <!-- Announcement Type -->
+            <div>
+                <label for="type" class="block text-gray-700 font-semibold mb-2">Announcement Type</label>
+                <select id="type" name="type" required
+                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    <option value="" disabled selected>Select Type</option>
+                    <option value="Placement">Placement</option>
+                    <option value="Result">Result</option>
+                    <option value="Events">Events</option>
+                    <option value="Alerts">Alerts</option>
+                    <option value="General">General</option>
+                </select>
             </div>
 
             <!-- Title -->
@@ -74,6 +88,13 @@
             e.preventDefault();
 
             const formData = new FormData(e.target);
+
+            // Append file_type if a file is selected
+            const fileInput = document.getElementById("file");
+            if (fileInput.files.length > 0) {
+                const file = fileInput.files[0];
+                formData.append("file_type", file.type);
+            }
 
             try {
                 const res = await fetch("/api/announcements", {
