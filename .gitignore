@@ -16,7 +16,6 @@ Thumbs.db
 # Build cache or output (optional, keep dist if you want to host it on GitHub Pages)
 dist/*.map
 
-src/input.css
 
 student.json
 deployDB.sql
